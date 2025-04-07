@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Camera, Edit2 } from 'lucide-react';
+import { ArrowLeft, User, Camera, Edit2, Shuffle, X, Check } from 'lucide-react';
 import { MessageType } from '@/types';
 import EnergyOrb from '@/components/EnergyOrb';
 import StarField from '@/components/StarField';
@@ -12,9 +12,11 @@ import { useNavigate } from 'react-router-dom';
 const Profile = () => {
   const navigate = useNavigate();
   const [nickname, setNickname] = useState('宇宙旅行者');
+  const [tempNickname, setTempNickname] = useState(''); // 临时保存编辑中的昵称
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [sentMessages, setSentMessages] = useState<MessageType[]>([]);
   const [receivedMessages, setReceivedMessages] = useState<MessageType[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
   
   // 从本地存储加载用户信息
   useEffect(() => {
@@ -41,11 +43,46 @@ const Profile = () => {
     }
   }, [nickname]);
   
+  // 开始编辑昵称
+  const startEditingNickname = () => {
+    setTempNickname(nickname); // 初始化临时昵称为当前昵称
+    setIsEditingNickname(true);
+    // 在下一个渲染周期中聚焦输入框并选中全部文本
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+      }
+    }, 0);
+  };
+  
   // 保存昵称
   const handleSaveNickname = () => {
-    localStorage.setItem('userNickname', nickname);
+    // 检查是否为空
+    if (!tempNickname.trim()) {
+      toast.error("昵称不能为空");
+      return;
+    }
+    
+    // 更新昵称并保存
+    setNickname(tempNickname);
+    localStorage.setItem('userNickname', tempNickname);
     setIsEditingNickname(false);
     toast.success("昵称已更新");
+  };
+  
+  // 取消编辑
+  const handleCancelEdit = () => {
+    setIsEditingNickname(false);
+    setTempNickname(nickname); // 恢复原来的昵称
+  };
+  
+  // 清空昵称
+  const handleClearNickname = () => {
+    setTempNickname('');
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
   
   // 返回首页
@@ -57,6 +94,22 @@ const Profile = () => {
   const handleAvatarUpload = () => {
     // 这里简化处理，实际应该打开文件选择器
     toast.info("头像上传功能即将上线");
+  };
+  
+  // 生成随机昵称
+  const generateRandomName = () => {
+    const prefixes = ['星际', '宇宙', '星云', '太空', '银河', '星尘', '星辰', '光波', '星光', '月影'];
+    const suffixes = ['旅行者', '探索者', '守望者', '追寻者', '漫游者', '梦想家', '收集者', '观测者', '飞行员', '领航员'];
+    
+    const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const randomSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+    
+    const randomName = `${randomPrefix}${randomSuffix}`;
+    setTempNickname(randomName);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+    toast.info("已生成随机昵称");
   };
   
   return (
@@ -95,19 +148,58 @@ const Profile = () => {
             
             <div className="flex-1">
               {isEditingNickname ? (
-                <div className="flex items-center gap-2">
-                  <Input 
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    className="bg-gray-700/50 border-gray-600/50 text-white"
-                    maxLength={12}
-                  />
-                  <Button 
-                    onClick={handleSaveNickname}
-                    className="cosmic-button"
-                  >
-                    保存
-                  </Button>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Input 
+                        ref={inputRef}
+                        value={tempNickname}
+                        onChange={(e) => setTempNickname(e.target.value)}
+                        className="bg-gray-700/50 border-gray-600/50 text-white pr-8"
+                        maxLength={12}
+                        placeholder="请输入昵称"
+                      />
+                      {tempNickname && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleClearNickname}
+                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                        >
+                          <X size={14} className="text-gray-400" />
+                        </Button>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={generateRandomName}
+                      className="h-10 w-10 bg-gray-700/50 border-gray-600/50 hover:bg-gray-600/50"
+                      title="随机取名"
+                    >
+                      <Shuffle size={16} className="text-cyan-400" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex gap-2 justify-end">
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelEdit}
+                      className="bg-gray-700/50 border-gray-600/50"
+                    >
+                      取消
+                    </Button>
+                    <Button 
+                      onClick={handleSaveNickname}
+                      size="sm"
+                      className="cosmic-button"
+                      disabled={!tempNickname.trim()}
+                    >
+                      <Check size={14} className="mr-1" />
+                      保存
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
@@ -115,7 +207,7 @@ const Profile = () => {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={() => setIsEditingNickname(true)}
+                    onClick={startEditingNickname}
                     className="h-8 w-8"
                   >
                     <Edit2 size={16} className="text-gray-400" />
