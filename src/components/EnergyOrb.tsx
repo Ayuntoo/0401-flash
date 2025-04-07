@@ -36,10 +36,10 @@ const EnergyOrb: React.FC<EnergyOrbProps> = ({
   };
 
   const glowClasses = {
-    blue: 'shadow-[0_0_45px_rgba(59,130,246,0.9)]',
-    purple: 'shadow-[0_0_45px_rgba(168,85,247,0.9)]',
-    cyan: 'shadow-[0_0_45px_rgba(6,182,212,0.9)]',
-    pink: 'shadow-[0_0_45px_rgba(219,39,119,0.9)]',
+    blue: '',
+    purple: '',
+    cyan: '',
+    pink: '',
   };
 
   // Extract surname if available

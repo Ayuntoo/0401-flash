@@ -6,11 +6,14 @@ import MessageViewer from '@/components/MessageViewer';
 import ElectricPath from '@/components/ElectricPath';
 import { Button } from '@/components/ui/button';
 import { MessageType, Position } from '@/types';
-import { SendHorizonal, RotateCcw } from 'lucide-react';
+import { SendHorizonal, RotateCcw, UserCircle } from 'lucide-react';
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
+import { useNavigate } from 'react-router-dom';
+import GeometricShapes from '@/components/GeometricShapes';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -292,96 +295,119 @@ const Index = () => {
     toast.success("所有光波已清除");
   };
 
+  // 处理"我的"按钮点击
+  const handleMyProfileClick = () => {
+    navigate('/profile');
+  };
+
   return (
-    <div className="min-h-screen cosmic-bg overflow-hidden relative">
-      <StarField starsCount={150} />
+    <div className="relative h-screen overflow-hidden">
+      <div className="absolute inset-0 cosmic-bg z-0">
+        <StarField count={600} speed={0.08} size={3} glow={true} />
+        <GeometricShapes count={30} />
+      </div>
       
-      <div 
-        ref={containerRef}
-        className="relative w-full min-h-screen flex flex-col"
-      >
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 z-10">
-          <h1 className="text-xl md:text-2xl font-bold text-white glow-text">
-           宇宙光波
-          </h1>
-          
-          <Button
+      <div className="relative h-full flex flex-col overflow-hidden z-10">
+      
+        {/* 添加右上角的"我的"入口按钮 */}
+        <div className="absolute top-6 right-6 z-30">
+          <Button 
+            onClick={handleMyProfileClick}
+            className="rounded-full w-12 h-12 bg-gradient-to-r from-blue-500/50 to-purple-500/50 border border-white/20 backdrop-blur-sm shadow-glow"
             variant="outline"
             size="icon"
-            onClick={handleClearAllMessages}
-            className="bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700/50"
           >
-            <RotateCcw size={18} className="text-gray-300" />
+            <UserCircle className="w-6 h-6 text-white" />
           </Button>
         </div>
         
-        {/* Main content area with orbs */}
-        <div className="flex-grow relative">
-          {/* Render all electric paths */}
-          {paths.map(path => (
-            <ElectricPath 
-              key={path.id}
-              startPosition={path.start}
-              endPosition={path.end}
-              color={path.color}
-              animate={true}
-              duration={800}
-            />
-          ))}
-          
-          {/* Render all message orbs */}
-          {messages.map(message => (
-            <div
-              key={message.id}
-              style={{
-                position: 'absolute',
-                left: `${message.position.x}px`,
-                top: `${message.position.y}px`,
-                transform: 'translate(-50%, -50%)',
-                zIndex: 10
-              }}
+        <div 
+          ref={containerRef}
+          className="relative w-full min-h-screen flex flex-col"
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center p-4 z-10">
+            <h1 className="text-xl md:text-2xl font-bold text-white glow-text">
+             宇宙光波
+            </h1>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleClearAllMessages}
+              className="bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700/50"
             >
-              <EnergyOrb
-                id={message.id}
-                size={message.size}
-                color={message.color}
-                senderName={message.senderName}
-                onClick={() => handleCaptureMessage(message)}
-                isFloating={true}
+              <RotateCcw size={18} className="text-gray-300" />
+            </Button>
+          </div>
+          
+          {/* Main content area with orbs */}
+          <div className="flex-grow relative">
+            {/* Render all electric paths */}
+            {paths.map(path => (
+              <ElectricPath 
+                key={path.id}
+                startPosition={path.start}
+                endPosition={path.end}
+                color={path.color}
+                animate={true}
+                duration={800}
               />
-            </div>
-          ))}
-        </div>
+            ))}
+            
+            {/* Render all message orbs */}
+            {messages.map(message => (
+              <div
+                key={message.id}
+                style={{
+                  position: 'absolute',
+                  left: `${message.position.x}px`,
+                  top: `${message.position.y}px`,
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 10
+                }}
+              >
+                <EnergyOrb
+                  id={message.id}
+                  size={message.size}
+                  color={message.color}
+                  senderName={message.senderName}
+                  onClick={() => handleCaptureMessage(message)}
+                  isFloating={true}
+                />
+              </div>
+            ))}
+          </div>
 
-        {/* Bottom action button */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-          <Button 
-            onClick={() => setIsFormOpen(true)}
-            className="cosmic-button rounded-full px-6 py-6"
-          >
-            <SendHorizonal size={20} className="mr-2" />
-            <span>发送光波</span>
-          </Button>
+          {/* Bottom action button */}
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+            <Button 
+              onClick={() => setIsFormOpen(true)}
+              className="cosmic-button rounded-full px-6 py-6"
+            >
+              <SendHorizonal size={20} className="mr-2" />
+              <span>发送光波</span>
+            </Button>
+          </div>
+          
+          {/* Message form dialog */}
+          <MessageForm
+            isOpen={isFormOpen}
+            onClose={() => setIsFormOpen(false)}
+            onSubmit={handleCreateMessage}
+          />
+          
+          {/* Message viewer dialog */}
+          <MessageViewer
+            message={selectedMessage}
+            isOpen={isViewerOpen}
+            onClose={() => setIsViewerOpen(false)}
+            onRelease={handleReleaseMessage}
+            onReply={handleReplyToMessage}
+            onUnlock={() => selectedMessage && handleUnlockMessage(selectedMessage.id)}
+            isUnlocked={selectedMessage ? unlockedOrbIds.has(selectedMessage.id) : false}
+          />
         </div>
-        
-        {/* Message form dialog */}
-        <MessageForm
-          isOpen={isFormOpen}
-          onClose={() => setIsFormOpen(false)}
-          onSubmit={handleCreateMessage}
-        />
-        
-        {/* Message viewer dialog */}
-        <MessageViewer
-          message={selectedMessage}
-          isOpen={isViewerOpen}
-          onClose={() => setIsViewerOpen(false)}
-          onRelease={handleReleaseMessage}
-          onReply={handleReplyToMessage}
-          onUnlock={() => selectedMessage && handleUnlockMessage(selectedMessage.id)}
-          isUnlocked={selectedMessage ? unlockedOrbIds.has(selectedMessage.id) : false}
-        />
       </div>
     </div>
   );
