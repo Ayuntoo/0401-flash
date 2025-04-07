@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MessageType } from '@/types';
-import { Send, MessageCircle, Unlock, CornerUpLeft } from 'lucide-react';
+import { MessageCircle, Unlock, CornerUpLeft, X, Send } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 interface MessageViewerProps {
@@ -11,7 +10,9 @@ interface MessageViewerProps {
   isOpen: boolean;
   onClose: () => void;
   onRelease: () => void;
-  onReply?: (originalMessage: MessageType, replyText: string) => void;
+  onReply?: (text: string, color: string) => void;
+  onUnlock?: () => void;
+  isUnlocked?: boolean;
 }
 
 const MessageViewer: React.FC<MessageViewerProps> = ({ 
@@ -19,15 +20,16 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
   isOpen, 
   onClose, 
   onRelease,
-  onReply 
+  onReply,
+  onUnlock,
+  isUnlocked = false
 }) => {
-  const [isUnlocked, setIsUnlocked] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
 
   if (!message) return null;
   
-  // Get only first 2 characters if not unlocked
+  // 如果没有解锁，只显示前两个字符
   const displayText = isUnlocked 
     ? message.text 
     : message.text && message.text.length > 2 
@@ -35,7 +37,9 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
       : message.text;
   
   const handleUnlock = () => {
-    setIsUnlocked(true);
+    if (onUnlock) {
+      onUnlock();
+    }
   };
   
   const handleToggleReply = () => {
@@ -43,8 +47,8 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
   };
   
   const handleReply = () => {
-    if (replyText.trim() && message && onReply) {
-      onReply(message, replyText);
+    if (replyText.trim() && onReply) {
+      onReply(replyText, message.color);
       setReplyText('');
       setIsReplying(false);
       onClose();
@@ -55,7 +59,7 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900/90 border border-cosmic-light/30 backdrop-blur-lg text-white max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center glow-text text-xl">Captured Echo</DialogTitle>
+          <DialogTitle className="text-center glow-text text-xl">光波消息</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4 max-h-80 overflow-y-auto">
@@ -63,7 +67,7 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
             <div className="bg-gray-800/50 p-4 rounded-lg border border-cosmic-light/20">
               {!isUnlocked && (
                 <div className="text-center mb-2 text-cyan-400/80">
-                  <span className="text-xs">Content Locked</span>
+                  <span className="text-xs">内容已锁定</span>
                 </div>
               )}
               <p className="text-white whitespace-pre-wrap break-words">
@@ -76,7 +80,7 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
             <div className="mt-4">
               <img 
                 src={message.image} 
-                alt="Message attachment" 
+                alt="消息附件" 
                 className="w-full rounded-lg object-contain max-h-60"
               />
             </div>
@@ -91,7 +95,7 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
           {isReplying && (
             <div className="mt-2">
               <Textarea
-                placeholder="Type your reply..."
+                placeholder="输入回复内容..."
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 className="bg-gray-800/70 border-cosmic-light/30 text-white placeholder:text-gray-400 resize-none h-24"
@@ -103,7 +107,7 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
                   disabled={!replyText.trim()}
                 >
                   <CornerUpLeft size={16} className="mr-2" />
-                  Send Reply
+                  发送回复
                 </Button>
               </div>
             </div>
@@ -113,48 +117,59 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
         <div className="mt-4">
           <p className="text-sm text-gray-400 text-center mb-2">
             <MessageCircle size={14} className="inline mr-1" />
-            Echo received from the cosmos
+            来自宇宙的回声
           </p>
         </div>
         
         <DialogFooter className="flex flex-wrap justify-between gap-2">
-          {!isUnlocked && (
-            <Button 
-              variant="outline"
-              onClick={handleUnlock}
-              className="bg-cyan-900/30 border-cyan-500/50 hover:bg-cyan-800/50 text-cyan-300"
-            >
-              <Unlock size={16} className="mr-2" />
-              Unlock
-            </Button>
+          {!isUnlocked ? (
+            <>
+              <Button 
+                variant="outline"
+                onClick={handleUnlock}
+                className="bg-cyan-900/30 border-cyan-500/50 hover:bg-cyan-800/50 text-cyan-300"
+              >
+                <Unlock size={16} className="mr-2" />
+                解锁
+              </Button>
+              
+              <Button 
+                onClick={onRelease}
+                className="cosmic-button"
+              >
+                <Send size={16} className="mr-2" />
+                扔回去
+              </Button>
+              
+              <Button 
+                onClick={onClose}
+                variant="outline"
+                className="bg-gray-800/70 border-cosmic-light/30 hover:bg-gray-700"
+              >
+                <X size={16} className="mr-2" />
+                关闭
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                variant={isReplying ? "default" : "outline"}
+                onClick={handleToggleReply}
+                className={isReplying ? "bg-purple-700" : "bg-gray-800/70 border-cosmic-light/30 hover:bg-gray-700"}
+              >
+                <CornerUpLeft size={16} className="mr-2" />
+                {isReplying ? "取消回复" : "回复"}
+              </Button>
+              
+              <Button 
+                onClick={onClose}
+                variant="outline"
+                className="bg-gray-800/70 border-cosmic-light/30 hover:bg-gray-700"
+              >
+                关闭
+              </Button>
+            </>
           )}
-          
-          {isUnlocked && (
-            <Button 
-              variant={isReplying ? "default" : "outline"}
-              onClick={handleToggleReply}
-              className={isReplying ? "bg-purple-700" : "bg-gray-800/70 border-cosmic-light/30 hover:bg-gray-700"}
-            >
-              <CornerUpLeft size={16} className="mr-2" />
-              {isReplying ? "Cancel Reply" : "Reply"}
-            </Button>
-          )}
-          
-          <Button 
-            onClick={onClose}
-            variant="outline"
-            className="bg-gray-800/70 border-cosmic-light/30 hover:bg-gray-700"
-          >
-            Close
-          </Button>
-          
-          <Button 
-            onClick={onRelease}
-            className="cosmic-button"
-          >
-            <Send size={16} className="mr-2" />
-            Throw Back
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

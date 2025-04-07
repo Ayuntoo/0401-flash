@@ -22,17 +22,20 @@ const Index = () => {
     id: string;
   }[]>([]);
   
+  // 跟踪已解锁的光球ID
+  const [unlockedOrbIds, setUnlockedOrbIds] = useState<Set<string>>(new Set());
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasHeight = typeof window !== 'undefined' ? window.innerHeight - 100 : 600;
 
   // Load sample messages on first render
   useEffect(() => {
-    const sampleNames = ["Zhang Wei", "Li Na", "Wang Fang", "Liu Yang", "Chen Lei"];
+    const sampleNames = ["张伟", "李娜", "王芳", "刘阳", "陈磊"];
     
     const sampleMessages: MessageType[] = [
       {
         id: uuidv4(),
-        text: "Hello from the cosmos!",
+        text: "来自宇宙的问候！",
         type: 'text',
         position: { x: window.innerWidth * 0.2, y: window.innerHeight * 0.3 },
         color: 'blue',
@@ -42,7 +45,7 @@ const Index = () => {
       },
       {
         id: uuidv4(),
-        text: "What a beautiful universe",
+        text: "多么美丽的宇宙啊",
         type: 'text',
         position: { x: window.innerWidth * 0.7, y: window.innerHeight * 0.2 },
         color: 'purple',
@@ -52,7 +55,7 @@ const Index = () => {
       },
       {
         id: uuidv4(),
-        text: "Cosmic vibrations",
+        text: "宇宙能量在流动",
         type: 'text',
         position: { x: window.innerWidth * 0.5, y: window.innerHeight * 0.6 },
         color: 'cyan',
@@ -207,7 +210,7 @@ const Index = () => {
     };
     
     setMessages(prevMessages => [...prevMessages, newMessage]);
-    toast.success("Echo released to the cosmos!");
+    toast.success("光波已发送！");
   };
 
   const handleCaptureMessage = (message: MessageType) => {
@@ -218,7 +221,13 @@ const Index = () => {
   const handleReleaseMessage = () => {
     setIsViewerOpen(false);
     setSelectedMessage(null);
-    toast.info("Echo released back to the cosmos");
+    toast.success("光波已释放回宇宙");
+  };
+
+  const handleUnlockMessage = (messageId: string) => {
+    // 将该光球ID添加到已解锁集合中
+    setUnlockedOrbIds(prev => new Set(prev).add(messageId));
+    toast.success("光波已解锁");
   };
 
   const handleReplyToMessage = (originalMessage: MessageType, replyText: string) => {
@@ -245,7 +254,7 @@ const Index = () => {
     };
     
     setMessages(prevMessages => [...prevMessages, replyMessage]);
-    toast.success("Reply sent to the cosmos!");
+    toast.success("回复光波已发送");
     
     // Create immediate electric path between original and reply
     const originalOrb = document.getElementById(originalMessage.id);
@@ -280,7 +289,7 @@ const Index = () => {
   const handleClearAllMessages = () => {
     setMessages([]);
     localStorage.removeItem('cosmicMessages');
-    toast.success("All echoes cleared");
+    toast.success("所有光波已清除");
   };
 
   return (
@@ -294,7 +303,7 @@ const Index = () => {
         {/* Header */}
         <div className="flex justify-between items-center p-4 z-10">
           <h1 className="text-xl md:text-2xl font-bold text-white glow-text">
-           Throwback Wave
+           宇宙光波
           </h1>
           
           <Button
@@ -352,7 +361,7 @@ const Index = () => {
             className="cosmic-button rounded-full px-6 py-6"
           >
             <SendHorizonal size={20} className="mr-2" />
-            <span>扔光波</span>
+            <span>发送光波</span>
           </Button>
         </div>
         
@@ -370,6 +379,8 @@ const Index = () => {
           onClose={() => setIsViewerOpen(false)}
           onRelease={handleReleaseMessage}
           onReply={handleReplyToMessage}
+          onUnlock={() => selectedMessage && handleUnlockMessage(selectedMessage.id)}
+          isUnlocked={selectedMessage ? unlockedOrbIds.has(selectedMessage.id) : false}
         />
       </div>
     </div>

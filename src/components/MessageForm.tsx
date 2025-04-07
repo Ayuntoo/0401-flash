@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -123,7 +122,7 @@ const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900/90 border border-cosmic-light/30 backdrop-blur-lg text-white max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center glow-text text-xl">Create Cosmic Echo</DialogTitle>
+          <DialogTitle className="text-center glow-text text-xl">发送光波消息</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -195,7 +194,7 @@ const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) 
               className="cosmic-button px-4 py-2"
             >
               <Send size={18} className="mr-2" />
-              Send Echo
+              发送到宇宙
             </Button>
           </div>
         </div>
