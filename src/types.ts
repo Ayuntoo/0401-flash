@@ -5,16 +5,16 @@ export interface Position {
 
 export interface MessageType {
   id: string;
-  text?: string;
-  image?: string;
-  audio?: string;
-  type: 'text' | 'image' | 'audio' | 'mixed';
+  text: string;
+  type: 'text' | 'audio' | 'image' | 'mixed';
   position: Position;
   color: 'blue' | 'purple' | 'cyan' | 'pink';
   size: 'sm' | 'md' | 'lg';
   created: number;
   senderName?: string;
-  replyTo?: string;
   isFromCurrentUser?: boolean;
+  replyTo?: string;
+  audioId?: string;
+  imageId?: string;
 }
 

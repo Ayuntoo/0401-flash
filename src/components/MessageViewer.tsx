@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MessageType } from '@/types';
 import { MessageCircle, Unlock, CornerUpLeft, X, Send } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { createMediaUrl } from '@/utils/storage';
 
 interface MessageViewerProps {
   message: MessageType | null;
@@ -26,6 +27,8 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
 }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   if (!message) return null;
   
@@ -55,6 +58,48 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
     }
   };
   
+  useEffect(() => {
+    const loadMedia = async () => {
+      // 清理旧的 URL
+      if (audioSrc) {
+        URL.revokeObjectURL(audioSrc);
+        setAudioSrc(null);
+      }
+      if (imageSrc) {
+        URL.revokeObjectURL(imageSrc);
+        setImageSrc(null);
+      }
+      
+      if (isUnlocked && message) {
+        if (message.audioId) {
+          try {
+            const url = await createMediaUrl(message.audioId);
+            setAudioSrc(url);
+          } catch (err) {
+            console.error('加载音频失败:', err);
+          }
+        }
+        
+        if (message.imageId) {
+          try {
+            const url = await createMediaUrl(message.imageId);
+            setImageSrc(url);
+          } catch (err) {
+            console.error('加载图片失败:', err);
+          }
+        }
+      }
+    };
+    
+    loadMedia();
+    
+    // 清理函数
+    return () => {
+      if (audioSrc) URL.revokeObjectURL(audioSrc);
+      if (imageSrc) URL.revokeObjectURL(imageSrc);
+    };
+  }, [isUnlocked, message, message?.audioId, message?.imageId]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900/90 border border-cosmic-light/30 backdrop-blur-lg text-white max-w-md">
@@ -76,9 +121,15 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
             </div>
           )}
           
-          {isUnlocked && message.audio && (
+          {isUnlocked && audioSrc && (
             <div className="bg-gray-800/50 p-3 rounded-lg border border-cosmic-light/20">
-              <audio controls src={message.audio} className="w-full" />
+              <audio controls src={audioSrc} className="w-full" />
+            </div>
+          )}
+          
+          {isUnlocked && imageSrc && (
+            <div className="bg-gray-800/50 p-3 rounded-lg border border-cosmic-light/20">
+              <img src={imageSrc} alt="光波图片" className="w-full max-h-60 object-contain rounded" />
             </div>
           )}
           

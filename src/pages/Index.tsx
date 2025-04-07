@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
 import GeometricShapes from '@/components/GeometricShapes';
+import { openDatabase } from '@/utils/storage';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -27,6 +28,14 @@ const Index = () => {
   
   // 跟踪已解锁的光球ID
   const [unlockedOrbIds, setUnlockedOrbIds] = useState<Set<string>>(new Set());
+  
+  // 在现有的 paths 状态下方添加随机电光相关逻辑
+  const [randomPaths, setRandomPaths] = useState<{
+    start: Position;
+    end: Position;
+    color: string;
+    id: string;
+  }[]>([]);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasHeight = typeof window !== 'undefined' ? window.innerHeight - 100 : 600;
@@ -98,28 +107,106 @@ const Index = () => {
     }
   }, []);
   
-  // 处理新消息创建
-  const handleCreateMessage = (text: string, color: string, size: string) => {
-    // 随机位置
+  // 在现有的 useEffect 钩子之后添加随机电光效果
+  useEffect(() => {
+    // 每隔几秒随机连接两个光球
+    const randomPathInterval = setInterval(() => {
+      // 如果光球少于2个，不创建路径
+      if (messages.length < 2) return;
+      
+      // 随机选择两个不同的光球
+      const availableMessages = [...messages];
+      const randomIndex1 = Math.floor(Math.random() * availableMessages.length);
+      const message1 = availableMessages[randomIndex1];
+      
+      // 移除已选择的光球，避免选到同一个
+      availableMessages.splice(randomIndex1, 1);
+      
+      const randomIndex2 = Math.floor(Math.random() * availableMessages.length);
+      const message2 = availableMessages[randomIndex2];
+      
+      // 创建路径
+      const newPathId = uuidv4();
+      const randomPath = {
+        id: newPathId,
+        start: message1.position,
+        end: message2.position,
+        color: Math.random() > 0.5 ? message1.color : message2.color
+      };
+      
+      setRandomPaths(prev => [...prev, randomPath]);
+      
+      // 2秒后移除该路径
+      setTimeout(() => {
+        setRandomPaths(prev => prev.filter(p => p.id !== newPathId));
+      }, 2000);
+    }, 5000); // 每5秒创建一次随机连接
+    
+    return () => clearInterval(randomPathInterval);
+  }, [messages]);
+  
+  // 初始化 IndexedDB 数据库
+  useEffect(() => {
+    const initDatabase = async () => {
+      try {
+        await openDatabase();
+        console.log("数据库初始化成功");
+      } catch (error) {
+        console.error("数据库初始化失败:", error);
+        toast.error("媒体存储初始化失败");
+      }
+    };
+    
+    initDatabase();
+  }, []);
+  
+  // 修改 handleCreateMessage 函数
+  const handleCreateMessage = (data: {
+    text: string;
+    audioId?: string;
+    imageId?: string;
+    type: 'text' | 'audio' | 'image' | 'mixed';
+  }) => {
+    // 在当前视口内随机位置
     const position = {
       x: Math.random() * (window.innerWidth * 0.8) + window.innerWidth * 0.1,
       y: Math.random() * (window.innerHeight * 0.6) + window.innerHeight * 0.2
     };
     
+    // 根据消息类型选择颜色
+    let color: 'blue' | 'purple' | 'cyan' | 'pink' = 'blue';
+    if (data.audioId && !data.imageId) color = 'purple';
+    else if (!data.audioId && data.imageId) color = 'cyan';
+    else if (data.audioId && data.imageId) color = 'pink';
+    
+    // 根据内容长度选择大小
+    let size: 'sm' | 'md' | 'lg' = 'md';
+    if (data.text.length > 100) size = 'lg';
+    else if (data.text.length < 20) size = 'sm';
+    
     const newMessage: MessageType = {
       id: uuidv4(),
-      text,
-      type: 'text',
+      text: data.text,
+      type: data.type,
       position,
-      color: color as 'blue' | 'purple' | 'cyan' | 'pink',
-      size: size as 'sm' | 'md' | 'lg',
+      color,
+      size,
       created: Date.now(),
       senderName: userNickname,
-      isFromCurrentUser: true
+      isFromCurrentUser: true,
+      // 使用正确的 audioId 和 imageId
+      audioId: data.audioId,
+      imageId: data.imageId
     };
     
+    // 更新状态
     setMessages(prev => [...prev, newMessage]);
+    
+    // 不要在这里直接使用 messages，它可能不是最新的状态
+    localStorage.setItem('cosmicMessages', JSON.stringify([...messages, newMessage]));
+    
     toast.success("光波已发送到宇宙中");
+    setIsFormOpen(false);
   };
   
   // 处理捕获消息
@@ -290,6 +377,19 @@ const Index = () => {
                 color={path.color}
                 animate={true}
                 duration={800}
+              />
+            ))}
+            
+            {/* 渲染随机光球之间的电光 */}
+            {randomPaths.map(path => (
+              <ElectricPath 
+                key={path.id}
+                startPosition={path.start}
+                endPosition={path.end}
+                color={path.color}
+                animate={true}
+                duration={2000}
+                thickness={1.5}
               />
             ))}
             
