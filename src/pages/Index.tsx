@@ -30,8 +30,9 @@ const Index = () => {
   
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasHeight = typeof window !== 'undefined' ? window.innerHeight - 100 : 600;
+  const [userNickname, setUserNickname] = useState<string>('宇宙旅行者');
 
-  // Load sample messages on first render
+  // 首次渲染时加载示例消息
   useEffect(() => {
     const sampleNames = ["张伟", "李娜", "王芳", "刘阳", "陈磊"];
     
@@ -74,7 +75,7 @@ const Index = () => {
         const parsedMessages = JSON.parse(storedMessages);
         setMessages(parsedMessages);
       } catch (err) {
-        console.error("Error parsing stored messages:", err);
+        console.error("解析存储消息时出错:", err);
         setMessages(sampleMessages);
       }
     } else {
@@ -82,268 +83,205 @@ const Index = () => {
     }
   }, []);
 
-  // Store messages to localStorage when updated
+  // 消息更新时存储到本地存储
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem('cosmicMessages', JSON.stringify(messages));
     }
   }, [messages]);
-
-  // Randomly animate electric paths between orbs
+  
+  // 在组件挂载时获取用户昵称
   useEffect(() => {
-    if (messages.length < 2) return;
-    
-    const animateInterval = setInterval(() => {
-      // 随机决定生成1-3条光波
-      const pathsCount = Math.floor(Math.random() * 3) + 1;
-      
-      // 保存已选择的连接对，避免重复
-      const connectedPairs = new Set<string>();
-      
-      for (let i = 0; i < pathsCount; i++) {
-        let sourceIndex, targetIndex;
-        let pairKey;
-        
-        // 选择不重复的连接对
-        do {
-          sourceIndex = Math.floor(Math.random() * messages.length);
-          do {
-            targetIndex = Math.floor(Math.random() * messages.length);
-          } while (targetIndex === sourceIndex);
-          
-          pairKey = `${sourceIndex}-${targetIndex}`;
-        } while (connectedPairs.has(pairKey));
-        
-        connectedPairs.add(pairKey);
-        
-        const source = messages[sourceIndex];
-        const target = messages[targetIndex];
-        
-        const colorMap = {
-          'blue': '#1E90FF',
-          'purple': '#9370DB',
-          'cyan': '#00E5FF',
-          'pink': '#FF69B4'
-        };
-        
-        // 为每条路径生成随机持续时间（600-1000ms）
-        const duration = Math.floor(Math.random() * 400) + 600;
-        
-        // 随机选择颜色（使用源或目标的颜色，或随机混合）
-        let pathColor;
-        const randomColorChoice = Math.random();
-        if (randomColorChoice < 0.4) {
-          pathColor = colorMap[source.color] || '#00E5FF';
-        } else if (randomColorChoice < 0.8) {
-          pathColor = colorMap[target.color] || '#00E5FF';
-        } else {
-          // 混合颜色效果
-          const colors = Object.values(colorMap);
-          pathColor = colors[Math.floor(Math.random() * colors.length)];
-        }
-        
-        const pathId = uuidv4();
-        setPaths(prev => [
-          ...prev, 
-          {
-            start: source.position,
-            end: target.position,
-            color: pathColor,
-            id: pathId
-          }
-        ]);
-        
-        // 每条路径使用不同的持续时间，增加视觉变化
-        setTimeout(() => {
-          setPaths(prev => prev.filter(path => path.id !== pathId));
-        }, duration);
-      }
-      
-    }, 2000); // 每两秒生成一组光波
-    
-    return () => clearInterval(animateInterval);
-  }, [messages]);
-
-  // Create floating effect for orbs
-  useEffect(() => {
-    const moveInterval = setInterval(() => {
-      setMessages(prevMessages => 
-        prevMessages.map(message => {
-          const xMovement = (Math.random() - 0.5) * 2;
-          const yMovement = (Math.random() - 0.5) * 2;
-          
-          return {
-            ...message,
-            position: {
-              x: Math.max(50, Math.min(window.innerWidth - 50, message.position.x + xMovement)),
-              y: Math.max(50, Math.min(window.innerHeight - 100, message.position.y + yMovement))
-            }
-          };
-        })
-      );
-    }, 5000);
-    
-    return () => clearInterval(moveInterval);
+    const savedNickname = localStorage.getItem('userNickname');
+    if (savedNickname) {
+      setUserNickname(savedNickname);
+    }
   }, []);
-
-  const handleCreateMessage = (message: {
-    text: string;
-    image?: string;
-    audio?: string;
-    type: 'text' | 'image' | 'audio' | 'mixed';
-  }) => {
-    const colors: Array<'blue' | 'purple' | 'cyan' | 'pink'> = ['blue', 'purple', 'cyan', 'pink'];
-    const sizes: Array<'sm' | 'md' | 'lg'> = ['sm', 'md', 'lg'];
-    
-    // Use a random Chinese surname for demo purposes
-    const senderNames = ["Zhang", "Li", "Wang", "Chen", "Liu", "Yang", "Huang", "Zhao", "Wu", "Zhou"];
-    const randomSenderName = senderNames[Math.floor(Math.random() * senderNames.length)];
+  
+  // 处理新消息创建
+  const handleCreateMessage = (text: string, color: string, size: string) => {
+    // 随机位置
+    const position = {
+      x: Math.random() * (window.innerWidth * 0.8) + window.innerWidth * 0.1,
+      y: Math.random() * (window.innerHeight * 0.6) + window.innerHeight * 0.2
+    };
     
     const newMessage: MessageType = {
       id: uuidv4(),
-      ...message,
-      position: {
-        x: Math.random() * (window.innerWidth - 100) + 50,
-        y: Math.random() * (window.innerHeight - 150) + 50
-      },
-      color: colors[Math.floor(Math.random() * colors.length)],
-      size: sizes[Math.floor(Math.random() * sizes.length)],
+      text,
+      type: 'text',
+      position,
+      color: color as 'blue' | 'purple' | 'cyan' | 'pink',
+      size: size as 'sm' | 'md' | 'lg',
       created: Date.now(),
-      senderName: `${randomSenderName} ${Math.floor(Math.random() * 100)}`
+      senderName: userNickname,
+      isFromCurrentUser: true
     };
     
-    setMessages(prevMessages => [...prevMessages, newMessage]);
-    toast.success("光波已发送！");
+    setMessages(prev => [...prev, newMessage]);
+    toast.success("光波已发送到宇宙中");
   };
-
+  
+  // 处理捕获消息
   const handleCaptureMessage = (message: MessageType) => {
-    setSelectedMessage(message);
-    setIsViewerOpen(true);
+    if (containerRef.current) {
+      // 获取容器位置
+      const rect = containerRef.current.getBoundingClientRect();
+      
+      // 创建电路路径动画
+      const start = {
+        x: message.position.x,
+        y: message.position.y
+      };
+      
+      // 目标位置（屏幕中间偏下）
+      const end = {
+        x: window.innerWidth / 2,
+        y: window.innerHeight * 0.7
+      };
+      
+      // 添加路径
+      const pathId = uuidv4();
+      setPaths(prev => [...prev, {
+        id: pathId,
+        start,
+        end,
+        color: message.color
+      }]);
+      
+      // 显示消息查看器
+      setSelectedMessage(message);
+      
+      // 延迟打开消息查看器，等待路径动画
+      setTimeout(() => {
+        setIsViewerOpen(true);
+        // 路径动画结束后清除
+        setTimeout(() => {
+          setPaths(prev => prev.filter(p => p.id !== pathId));
+        }, 1000);
+      }, 800);
+    }
   };
-
-  const handleReleaseMessage = () => {
-    setIsViewerOpen(false);
-    setSelectedMessage(null);
-    toast.success("光波已释放回宇宙");
-  };
-
+  
+  // 处理解锁消息
   const handleUnlockMessage = (messageId: string) => {
-    // 将该光球ID添加到已解锁集合中
-    setUnlockedOrbIds(prev => new Set(prev).add(messageId));
-    toast.success("光波已解锁");
+    if (!unlockedOrbIds.has(messageId)) {
+      const newUnlockedIds = new Set(unlockedOrbIds);
+      newUnlockedIds.add(messageId);
+      setUnlockedOrbIds(newUnlockedIds);
+      toast.success("已解锁光波信息");
+    }
   };
-
-  const handleReplyToMessage = (originalMessage: MessageType, replyText: string) => {
-    const colors: Array<'blue' | 'purple' | 'cyan' | 'pink'> = ['blue', 'purple', 'cyan', 'pink'];
-    const sizes: Array<'sm' | 'md' | 'lg'> = ['sm', 'md', 'lg'];
-    
-    // Use a random Chinese surname for demo purposes
-    const senderNames = ["Zhang", "Li", "Wang", "Chen", "Liu", "Yang", "Huang", "Zhao", "Wu", "Zhou"];
-    const randomSenderName = senderNames[Math.floor(Math.random() * senderNames.length)];
-    
+  
+  // 处理回复消息
+  const handleReplyMessage = (originalMessage: MessageType, replyText: string) => {
+    // 创建回复消息
     const replyMessage: MessageType = {
       id: uuidv4(),
       text: replyText,
       type: 'text',
       position: {
-        x: Math.random() * (window.innerWidth - 100) + 50,
-        y: Math.random() * (window.innerHeight - 150) + 50
+        x: Math.random() * (window.innerWidth * 0.8) + window.innerWidth * 0.1,
+        y: Math.random() * (window.innerHeight * 0.6) + window.innerHeight * 0.2
       },
-      color: colors[Math.floor(Math.random() * colors.length)],
-      size: sizes[Math.floor(Math.random() * sizes.length)],
+      color: 'blue',
+      size: 'sm',
       created: Date.now(),
-      senderName: `${randomSenderName} ${Math.floor(Math.random() * 100)}`,
+      senderName: userNickname,
+      isFromCurrentUser: true,
       replyTo: originalMessage.id
     };
     
-    setMessages(prevMessages => [...prevMessages, replyMessage]);
-    toast.success("回复光波已发送");
+    setMessages(prev => [...prev, replyMessage]);
+    toast.success("回复已发送");
     
-    // Create immediate electric path between original and reply
-    const originalOrb = document.getElementById(originalMessage.id);
-    const originalPos = originalMessage.position;
-    
-    if (originalPos) {
-      const pathId = uuidv4();
-      
-      const colorMap = {
-        'blue': '#1E90FF',
-        'purple': '#9370DB',
-        'cyan': '#00E5FF',
-        'pink': '#FF69B4'
-      };
-      
-      setPaths(prev => [
-        ...prev, 
-        {
-          start: originalPos,
-          end: replyMessage.position,
-          color: colorMap[replyMessage.color] || '#00E5FF',
-          id: pathId
-        }
-      ]);
-      
-      setTimeout(() => {
-        setPaths(prev => prev.filter(path => path.id !== pathId));
-      }, 800);
-    }
+    // 关闭消息查看器
+    setIsViewerOpen(false);
   };
-
+  
+  // 清除所有消息
   const handleClearAllMessages = () => {
-    setMessages([]);
-    localStorage.removeItem('cosmicMessages');
-    toast.success("所有光波已清除");
-  };
-
-  // 处理"我的"按钮点击
-  const handleMyProfileClick = () => {
-    navigate('/profile');
+    // 保留示例消息
+    const sampleNames = ["张伟", "李娜", "王芳", "刘阳", "陈磊"];
+    
+    const sampleMessages: MessageType[] = [
+      {
+        id: uuidv4(),
+        text: "来自宇宙的问候！",
+        type: 'text',
+        position: { x: window.innerWidth * 0.2, y: window.innerHeight * 0.3 },
+        color: 'blue',
+        size: 'md',
+        created: Date.now(),
+        senderName: sampleNames[0]
+      },
+      {
+        id: uuidv4(),
+        text: "多么美丽的宇宙啊",
+        type: 'text',
+        position: { x: window.innerWidth * 0.7, y: window.innerHeight * 0.2 },
+        color: 'purple',
+        size: 'md',
+        created: Date.now(),
+        senderName: sampleNames[1]
+      },
+      {
+        id: uuidv4(),
+        text: "宇宙能量在流动",
+        type: 'text',
+        position: { x: window.innerWidth * 0.5, y: window.innerHeight * 0.6 },
+        color: 'cyan',
+        size: 'sm',
+        created: Date.now(),
+        senderName: sampleNames[2]
+      }
+    ];
+    
+    setMessages(sampleMessages);
+    setUnlockedOrbIds(new Set());
+    localStorage.setItem('cosmicMessages', JSON.stringify(sampleMessages));
+    toast.success("已重置光波");
   };
 
   return (
-    <div className="relative h-screen overflow-hidden">
-      <div className="absolute inset-0 cosmic-bg z-0">
+    <div className="min-h-screen bg-black text-white overflow-hidden">
+      <div className="absolute inset-0 cosmic-bg">
         <StarField count={600} speed={0.08} size={3} glow={true} />
         <GeometricShapes count={30} />
       </div>
       
-      <div className="relative h-full flex flex-col overflow-hidden z-10">
-      
-        {/* 添加右上角的"我的"入口按钮 */}
-        <div className="absolute top-6 right-6 z-30">
-          <Button 
-            onClick={handleMyProfileClick}
-            className="rounded-full w-12 h-12 bg-gradient-to-r from-blue-500/50 to-purple-500/50 border border-white/20 backdrop-blur-sm shadow-glow"
-            variant="outline"
-            size="icon"
-          >
-            <UserCircle className="w-6 h-6 text-white" />
-          </Button>
-        </div>
-        
-        <div 
-          ref={containerRef}
-          className="relative w-full min-h-screen flex flex-col"
-        >
-          {/* Header */}
-          <div className="flex justify-between items-center p-4 z-10">
+      <div className="relative min-h-screen flex flex-col">
+        <div ref={containerRef} className="flex-1 flex flex-col">
+          {/* 页眉 */}
+          <div className="flex justify-center items-center relative p-4 z-10">
             <h1 className="text-xl md:text-2xl font-bold text-white glow-text">
-             宇宙光波
+              宇宙光波
             </h1>
             
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleClearAllMessages}
-              className="bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700/50"
-            >
-              <RotateCcw size={18} className="text-gray-300" />
-            </Button>
+            <div className="absolute right-4 flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleClearAllMessages}
+                className="bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700/50"
+              >
+                <RotateCcw size={18} className="text-gray-300" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate('/profile')}
+                className="bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700/50"
+              >
+                <UserCircle size={18} className="text-gray-300" />
+              </Button>
+            </div>
           </div>
           
-          {/* Main content area with orbs */}
+          {/* 主要内容区域，包含光球 */}
           <div className="flex-grow relative">
-            {/* Render all electric paths */}
+            {/* 渲染所有电路路径 */}
             {paths.map(path => (
               <ElectricPath 
                 key={path.id}
@@ -355,7 +293,7 @@ const Index = () => {
               />
             ))}
             
-            {/* Render all message orbs */}
+            {/* 渲染所有消息光球 */}
             {messages.map(message => (
               <div
                 key={message.id}
@@ -379,7 +317,7 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Bottom action button */}
+          {/* 底部操作按钮 */}
           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
             <Button 
               onClick={() => setIsFormOpen(true)}
@@ -390,23 +328,24 @@ const Index = () => {
             </Button>
           </div>
           
-          {/* Message form dialog */}
+          {/* 消息表单对话框 */}
           <MessageForm
             isOpen={isFormOpen}
             onClose={() => setIsFormOpen(false)}
             onSubmit={handleCreateMessage}
           />
           
-          {/* Message viewer dialog */}
-          <MessageViewer
-            message={selectedMessage}
-            isOpen={isViewerOpen}
-            onClose={() => setIsViewerOpen(false)}
-            onRelease={handleReleaseMessage}
-            onReply={handleReplyToMessage}
-            onUnlock={() => selectedMessage && handleUnlockMessage(selectedMessage.id)}
-            isUnlocked={selectedMessage ? unlockedOrbIds.has(selectedMessage.id) : false}
-          />
+          {/* 消息查看器对话框 */}
+          {selectedMessage && (
+            <MessageViewer
+              isOpen={isViewerOpen}
+              onClose={() => setIsViewerOpen(false)}
+              message={selectedMessage}
+              isUnlocked={unlockedOrbIds.has(selectedMessage.id)}
+              onUnlock={() => handleUnlockMessage(selectedMessage.id)}
+              onReply={(replyText) => handleReplyMessage(selectedMessage, replyText)}
+            />
+          )}
         </div>
       </div>
     </div>
