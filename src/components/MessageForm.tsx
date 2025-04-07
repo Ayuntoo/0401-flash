@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Mic, Image, Send, X } from 'lucide-react';
+import { Mic, Send, X } from 'lucide-react';
 import { toast } from "sonner";
 
 interface MessageFormProps {
@@ -10,37 +10,17 @@ interface MessageFormProps {
   onClose: () => void;
   onSubmit: (message: {
     text: string;
-    image?: string;
     audio?: string;
-    type: 'text' | 'image' | 'audio' | 'mixed';
+    type: 'text' | 'audio' | 'mixed';
   }) => void;
 }
 
 const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) => {
   const [text, setText] = useState('');
-  const [image, setImage] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
   
-  // Handle image selection
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) { // 5MB
-      toast.error("Image is too large (max 5MB)");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImage(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Handle audio recording
+  // 处理音频录制
   const handleRecording = () => {
     if (isRecording) {
       stopRecording();
@@ -68,52 +48,49 @@ const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) 
       mediaRecorder.start();
       setIsRecording(true);
 
-      // Auto-stop after 10 seconds
+      // 10秒后自动停止
       setTimeout(() => {
-        if (mediaRecorder.state === "recording") {
+        if (mediaRecorder.state !== 'inactive') {
           mediaRecorder.stop();
           setIsRecording(false);
+          
+          // 停止所有音频轨道
+          stream.getTracks().forEach(track => track.stop());
         }
       }, 10000);
-      
-      // Store mediaRecorder to stop it later
-      (window as any).mediaRecorder = mediaRecorder;
     } catch (err) {
-      console.error("Error accessing microphone:", err);
-      toast.error("Could not access microphone");
+      console.error('Error accessing microphone', err);
+      toast.error("无法访问麦克风");
     }
   };
 
   const stopRecording = () => {
-    const mediaRecorder = (window as any).mediaRecorder;
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      mediaRecorder.stop();
-      setIsRecording(false);
-    }
+    setIsRecording(false);
+    // 实际停止录音的逻辑会在mediaRecorder的事件处理程序中
   };
 
   const handleSubmit = () => {
-    if (!text && !image && !audioUrl) {
-      toast.error("Please add text, image, or audio");
+    if (!text.trim() && !audioUrl) {
+      toast.error("请输入文本或录制语音");
       return;
     }
 
-    // Determine message type
-    let type: 'text' | 'image' | 'audio' | 'mixed' = 'text';
-    if (image && !text && !audioUrl) type = 'image';
-    if (audioUrl && !text && !image) type = 'audio';
-    if ((text && image) || (text && audioUrl) || (image && audioUrl) || (text && image && audioUrl)) type = 'mixed';
+    let type: 'text' | 'audio' | 'mixed' = 'text';
+    
+    if (text && audioUrl) {
+      type = 'mixed';
+    } else if (audioUrl) {
+      type = 'audio';
+    }
 
     onSubmit({
-      text,
-      image: image || undefined,
+      text: text.trim(),
       audio: audioUrl || undefined,
       type
     });
 
-    // Reset form
+    // 重置表单
     setText('');
-    setImage(null);
     setAudioUrl(null);
     onClose();
   };
@@ -127,25 +104,11 @@ const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) 
         
         <div className="space-y-4">
           <Textarea 
-            placeholder="Type your message..." 
+            placeholder="输入你的消息..." 
             className="bg-gray-800/50 border-cosmic-light/30 text-white placeholder:text-gray-400 resize-none h-24"
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          
-          {image && (
-            <div className="relative">
-              <img src={image} alt="Selected" className="w-full h-32 object-cover rounded-md" />
-              <Button 
-                size="icon" 
-                variant="destructive" 
-                className="absolute top-2 right-2 h-6 w-6 rounded-full"
-                onClick={() => setImage(null)}
-              >
-                <X size={14} />
-              </Button>
-            </div>
-          )}
           
           {audioUrl && (
             <div className="flex items-center justify-between bg-gray-800/50 rounded-md p-2">
@@ -163,22 +126,6 @@ const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) 
           
           <div className="flex gap-2 justify-between">
             <div className="flex gap-2">
-              <Button 
-                onClick={() => imageInputRef.current?.click()} 
-                size="icon" 
-                variant="outline"
-                className="bg-gray-800/70 border-cosmic-light/30 hover:bg-gray-700"
-              >
-                <Image size={18} className="text-cosmic-cyan" />
-                <input 
-                  type="file" 
-                  ref={imageInputRef} 
-                  accept="image/*" 
-                  onChange={handleImageChange} 
-                  className="hidden" 
-                />
-              </Button>
-              
               <Button 
                 onClick={handleRecording} 
                 size="icon" 

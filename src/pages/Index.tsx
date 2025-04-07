@@ -6,9 +6,10 @@ import MessageViewer from '@/components/MessageViewer';
 import ElectricPath from '@/components/ElectricPath';
 import { Button } from '@/components/ui/button';
 import { MessageType, Position } from '@/types';
-import { SendHorizonal, RotateCcw } from 'lucide-react';
+import { SendHorizonal, RotateCcw, UserCircle } from 'lucide-react';
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const [messages, setMessages] = useState<MessageType[]>([]);
@@ -27,6 +28,8 @@ const Index = () => {
   
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasHeight = typeof window !== 'undefined' ? window.innerHeight - 100 : 600;
+  const navigate = useNavigate();
+  const [userNickname, setUserNickname] = useState<string>('宇宙旅行者');
 
   // Load sample messages on first render
   useEffect(() => {
@@ -183,19 +186,23 @@ const Index = () => {
     return () => clearInterval(moveInterval);
   }, []);
 
+  // 在组件挂载时获取用户昵称
+  useEffect(() => {
+    const savedNickname = localStorage.getItem('userNickname');
+    if (savedNickname) {
+      setUserNickname(savedNickname);
+    }
+  }, []);
+
   const handleCreateMessage = (message: {
     text: string;
-    image?: string;
     audio?: string;
-    type: 'text' | 'image' | 'audio' | 'mixed';
+    type: 'text' | 'audio' | 'mixed';
   }) => {
     const colors: Array<'blue' | 'purple' | 'cyan' | 'pink'> = ['blue', 'purple', 'cyan', 'pink'];
     const sizes: Array<'sm' | 'md' | 'lg'> = ['sm', 'md', 'lg'];
     
-    // Use a random Chinese surname for demo purposes
-    const senderNames = ["Zhang", "Li", "Wang", "Chen", "Liu", "Yang", "Huang", "Zhao", "Wu", "Zhou"];
-    const randomSenderName = senderNames[Math.floor(Math.random() * senderNames.length)];
-    
+    // 使用用户设置的昵称，而不是随机生成
     const newMessage: MessageType = {
       id: uuidv4(),
       ...message,
@@ -206,7 +213,8 @@ const Index = () => {
       color: colors[Math.floor(Math.random() * colors.length)],
       size: sizes[Math.floor(Math.random() * sizes.length)],
       created: Date.now(),
-      senderName: `${randomSenderName} ${Math.floor(Math.random() * 100)}`
+      senderName: userNickname,
+      isFromCurrentUser: true // 添加标志表明这是当前用户发送的
     };
     
     setMessages(prevMessages => [...prevMessages, newMessage]);
@@ -292,96 +300,122 @@ const Index = () => {
     toast.success("所有光波已清除");
   };
 
+  // 处理"我的"按钮点击
+  const handleMyProfileClick = () => {
+    navigate('/profile');
+  };
+
   return (
-    <div className="min-h-screen cosmic-bg overflow-hidden relative">
-      <StarField starsCount={150} />
+    <div className="relative h-screen overflow-hidden">
+      <div className="absolute inset-0 cosmic-bg z-0">
+        <StarField count={400} speed={0.05} />
+      </div>
       
-      <div 
-        ref={containerRef}
-        className="relative w-full min-h-screen flex flex-col"
-      >
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 z-10">
-          <h1 className="text-xl md:text-2xl font-bold text-white glow-text">
-           宇宙光波
-          </h1>
-          
-          <Button
+      <div className="relative h-full flex flex-col overflow-hidden z-10">
+      
+        {/* 添加右上角的"我的"入口按钮 */}
+        <div className="absolute top-6 right-6 z-30">
+          <Button 
+            onClick={handleMyProfileClick}
+            className="rounded-full w-12 h-12 bg-gradient-to-r from-blue-500/50 to-purple-500/50 border border-white/20 backdrop-blur-sm shadow-glow"
             variant="outline"
             size="icon"
-            onClick={handleClearAllMessages}
-            className="bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700/50"
           >
-            <RotateCcw size={18} className="text-gray-300" />
+            <UserCircle className="w-6 h-6 text-white" />
           </Button>
         </div>
         
-        {/* Main content area with orbs */}
-        <div className="flex-grow relative">
-          {/* Render all electric paths */}
-          {paths.map(path => (
-            <ElectricPath 
-              key={path.id}
-              startPosition={path.start}
-              endPosition={path.end}
-              color={path.color}
-              animate={true}
-              duration={800}
-            />
-          ))}
-          
-          {/* Render all message orbs */}
-          {messages.map(message => (
-            <div
-              key={message.id}
-              style={{
-                position: 'absolute',
-                left: `${message.position.x}px`,
-                top: `${message.position.y}px`,
-                transform: 'translate(-50%, -50%)',
-                zIndex: 10
-              }}
-            >
-              <EnergyOrb
-                id={message.id}
-                size={message.size}
-                color={message.color}
-                senderName={message.senderName}
-                onClick={() => handleCaptureMessage(message)}
-                isFloating={true}
-              />
+        <div 
+          ref={containerRef}
+          className="relative w-full min-h-screen flex flex-col"
+        >
+          {/* Header */}
+          <div className="flex justify-center items-center p-4 z-10 relative">
+            {/* 清除按钮放在左侧 */}
+            <div className="absolute left-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleClearAllMessages}
+                className="bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700/50"
+              >
+                <RotateCcw size={18} className="text-gray-300" />
+              </Button>
             </div>
-          ))}
-        </div>
+            
+            {/* 标题居中 */}
+            <h1 className="text-xl md:text-2xl font-bold text-white glow-text text-center">
+              宇宙光波
+            </h1>
+          </div>
+          
+          {/* Main content area with orbs */}
+          <div className="flex-grow relative">
+            {/* Render all electric paths */}
+            {paths.map(path => (
+              <ElectricPath 
+                key={path.id}
+                startPosition={path.start}
+                endPosition={path.end}
+                color={path.color}
+                animate={true}
+                duration={800}
+              />
+            ))}
+            
+            {/* Render all message orbs */}
+            {messages.map(message => (
+              <div
+                key={message.id}
+                style={{
+                  position: 'absolute',
+                  left: `${message.position.x}px`,
+                  top: `${message.position.y}px`,
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 10
+                }}
+              >
+                <EnergyOrb
+                  id={message.id}
+                  size={message.size}
+                  color={message.color}
+                  senderName={message.senderName}
+                  onClick={() => handleCaptureMessage(message)}
+                  isFloating={true}
+                />
+              </div>
+            ))}
+          </div>
 
-        {/* Bottom action button */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-          <Button 
-            onClick={() => setIsFormOpen(true)}
-            className="cosmic-button rounded-full px-6 py-6"
-          >
-            <SendHorizonal size={20} className="mr-2" />
-            <span>发送光波</span>
-          </Button>
+          {/* Bottom action button */}
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+            <Button 
+              onClick={() => setIsFormOpen(true)}
+              className="cosmic-button rounded-full px-6 py-6"
+            >
+              <SendHorizonal size={20} className="mr-2" />
+              <span>发送光波</span>
+            </Button>
+          </div>
+          
+          {/* Message form dialog */}
+          <MessageForm
+            isOpen={isFormOpen}
+            onClose={() => setIsFormOpen(false)}
+            onSubmit={handleCreateMessage}
+          />
+          
+          {/* Message viewer dialog */}
+          <MessageViewer
+            message={selectedMessage}
+            isOpen={isViewerOpen}
+            onClose={() => setIsViewerOpen(false)}
+            onRelease={handleReleaseMessage}
+            onReply={handleReplyToMessage}
+            onUnlock={() => selectedMessage && handleUnlockMessage(selectedMessage.id)}
+            isUnlocked={selectedMessage ? unlockedOrbIds.has(selectedMessage.id) : false}
+          />
         </div>
-        
-        {/* Message form dialog */}
-        <MessageForm
-          isOpen={isFormOpen}
-          onClose={() => setIsFormOpen(false)}
-          onSubmit={handleCreateMessage}
-        />
-        
-        {/* Message viewer dialog */}
-        <MessageViewer
-          message={selectedMessage}
-          isOpen={isViewerOpen}
-          onClose={() => setIsViewerOpen(false)}
-          onRelease={handleReleaseMessage}
-          onReply={handleReplyToMessage}
-          onUnlock={() => selectedMessage && handleUnlockMessage(selectedMessage.id)}
-          isUnlocked={selectedMessage ? unlockedOrbIds.has(selectedMessage.id) : false}
-        />
       </div>
     </div>
   );
