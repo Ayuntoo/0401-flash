@@ -76,16 +76,6 @@ const MessageViewer: React.FC<MessageViewerProps> = ({
             </div>
           )}
           
-          {isUnlocked && message.image && (
-            <div className="mt-4">
-              <img 
-                src={message.image} 
-                alt="消息附件" 
-                className="w-full rounded-lg object-contain max-h-60"
-              />
-            </div>
-          )}
-          
           {isUnlocked && message.audio && (
             <div className="bg-gray-800/50 p-3 rounded-lg border border-cosmic-light/20">
               <audio controls src={message.audio} className="w-full" />
