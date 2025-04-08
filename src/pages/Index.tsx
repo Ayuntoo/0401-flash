@@ -205,7 +205,10 @@ const Index = () => {
     // 不要在这里直接使用 messages，它可能不是最新的状态
     localStorage.setItem('cosmicMessages', JSON.stringify([...messages, newMessage]));
     
-    toast.success("光波已发送到宇宙中");
+    toast.success("光波已发送到宇宙中", {
+      position: "top-center",
+      icon: '🌌'
+    });
     setIsFormOpen(false);
   };
   
@@ -331,43 +334,35 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden">
-      <div className="absolute inset-0 cosmic-bg">
-        <StarField count={600} speed={0.08} size={3} glow={true} />
-        <GeometricShapes count={30} />
-      </div>
+    <div className="min-h-screen cosmic-bg overflow-hidden relative">
+      {/* 简化的星空效果 */}
+      <StarField starCount={200} speed={0.3} />
       
-      <div className="relative min-h-screen flex flex-col">
-        <div ref={containerRef} className="flex-1 flex flex-col">
-          {/* 页眉 */}
-          <div className="flex justify-center items-center relative p-4 z-10">
-            <h1 className="text-xl md:text-2xl font-bold text-white glow-text">
-              宇宙光波
-            </h1>
-            
-            <div className="absolute right-4 flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleClearAllMessages}
-                className="bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700/50"
-              >
-                <RotateCcw size={18} className="text-gray-300" />
-              </Button>
-              
-              <Button
-                variant="outline"
+      <GeometricShapes quantity={15} />
+      
+      <div className="container mx-auto px-4 py-6 relative z-10">
+        <div className="flex flex-col h-[calc(100vh-80px)]">
+          <div className="flex justify-between items-center">
+            <h1 className="text-xl sm:text-2xl font-bold glow-text">宇宙光波</h1>
+            <div className="flex gap-2">
+              <Button 
+                variant="ghost" 
                 size="icon"
                 onClick={() => navigate('/profile')}
-                className="bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700/50"
               >
-                <UserCircle size={18} className="text-gray-300" />
+                <UserCircle className="text-white/80 hover:text-white" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleClearAllMessages}
+              >
+                <RotateCcw className="text-white/80 hover:text-white" />
               </Button>
             </div>
           </div>
           
-          {/* 主要内容区域，包含光球 */}
-          <div className="flex-grow relative">
+          <div ref={containerRef} className="flex-1 flex flex-col">
             {/* 渲染所有电路路径 */}
             {paths.map(path => (
               <ElectricPath 

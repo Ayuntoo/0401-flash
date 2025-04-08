@@ -105,10 +105,10 @@
 
 @keyframes magnetic-pulse {
   0%, 100% {
-    box-shadow: 0 0 25px currentColor, 0 0 45px currentColor, inset 0 0 15px rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 25px rgba(255,255,255,0.2), 0 0 40px currentColor, inset 0 0 20px rgba(255,255,255,0.2);
   }
   50% {
-    box-shadow: 0 0 45px currentColor, 0 0 65px currentColor, inset 0 0 25px rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 30px rgba(255,255,255,0.3), 0 0 50px currentColor, inset 0 0 30px rgba(255,255,255,0.3);
   }
 }
 
@@ -129,31 +129,31 @@
 
 @keyframes halo-flicker {
   0%, 100% {
-    filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 12px currentColor);
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.3)) drop-shadow(0 0 12px currentColor);
   }
   25% {
-    filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 18px currentColor);
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.4)) drop-shadow(0 0 16px currentColor);
   }
   50% {
-    filter: drop-shadow(0 0 14px currentColor) drop-shadow(0 0 20px currentColor);
+    filter: drop-shadow(0 0 12px rgba(255,255,255,0.5)) drop-shadow(0 0 20px currentColor);
   }
   75% {
-    filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 16px currentColor);
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.4)) drop-shadow(0 0 16px currentColor);
   }
 }
 
 @keyframes orbit {
   0% {
-    transform: rotate(0deg) translateX(30px) rotate(0deg) scale(0.8);
-    opacity: 0.3;
+    transform: rotate(0deg) translateX(35px) rotate(0deg) scale(0.8);
+    opacity: 0.2;
   }
   50% {
-    opacity: 1;
-    transform: rotate(180deg) translateX(40px) rotate(-180deg) scale(1.2);
+    opacity: 0.8;
+    transform: rotate(180deg) translateX(45px) rotate(-180deg) scale(1.1);
   }
   100% {
-    transform: rotate(360deg) translateX(30px) rotate(-360deg) scale(0.8);
-    opacity: 0.3;
+    transform: rotate(360deg) translateX(35px) rotate(-360deg) scale(0.8);
+    opacity: 0.2;
   }
 }
 
@@ -365,6 +365,9 @@
 }
 
 .star {
+  position: absolute;
+  background-color: white;
+  border-radius: 50%;
   animation: twinkle 3s infinite alternate ease-in-out;
 }
 
@@ -388,4 +391,116 @@
 .pulse-ring {
   animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
 }
+
+/* 添加到CSS中，确保通知显示在顶部 */
+.notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(10, 10, 30, 0.85);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(99, 125, 255, 0.3);
+  animation: fadeInDown 0.5s, fadeOut 0.5s 2.5s forwards;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 90%;
+  width: auto;
+}
+
+.notification-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* 更丰富的星星效果 */
+@keyframes enhanced-twinkle {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes floating-star {
+  0% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(10px) translateY(-5px); }
+  100% { transform: translateX(0) translateY(0); }
+}
+
+@keyframes shooting-star {
+  0% { 
+    transform: translateX(0) translateY(0) rotate(35deg) scale(0);
+    opacity: 0;
+  }
+  20% { 
+    transform: translateX(-50vw) translateY(50vh) rotate(35deg) scale(1);
+    opacity: 1;
+  }
+  100% { 
+    transform: translateX(-100vw) translateY(100vh) rotate(35deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* 更丰富的星星样式类 */
+.enhanced-star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background-color: white;
+  border-radius: 50%;
+  animation: enhanced-twinkle 4s infinite ease-in-out;
+}
+
+.floating-star {
+  animation: twinkle 3s infinite alternate ease-in-out, 
+             floating-star 20s infinite ease-in-out;
+}
+
+.shooting-star {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 1px;
+  transform-origin: right;
+  background: linear-gradient(to left, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+  border-radius: 100px;
+  filter: drop-shadow(0 0 2px white);
+  animation: shooting-star 10s infinite ease-out;
+  opacity: 0;
+}
+
+/* 星星的延迟动画 */
+.delay-1 { animation-delay: 0.5s; }
+.delay-2 { animation-delay: 1s; }
+.delay-3 { animation-delay: 1.5s; }
+.delay-4 { animation-delay: 2s; }
+.delay-5 { animation-delay: 2.5s; }
+.delay-6 { animation-delay: 3s; }
 

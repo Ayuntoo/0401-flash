@@ -145,6 +145,11 @@ const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) 
     setImageUrl(null);
     setImageId(null);
     onClose();
+
+    toast.success("光波已发送到宇宙中", {
+      position: "top-center", 
+      icon: '🌌'
+    });
   };
 
   return (

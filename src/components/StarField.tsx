@@ -1,17 +1,17 @@
 import React, { useEffect, useRef } from 'react';
 
 interface StarFieldProps {
-  count?: number;
+  starCount?: number;
+  depth?: number;
   speed?: number;
-  size?: number;
-  glow?: boolean;
+  backgroundColor?: string;
 }
 
-const StarField: React.FC<StarFieldProps> = ({ 
-  count = 200, 
-  speed = 0.05,
-  size = 2,
-  glow = true
+const StarField: React.FC<StarFieldProps> = ({
+  starCount = 200,
+  depth = 3,
+  speed = 0.5,
+  backgroundColor = 'transparent'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -22,117 +22,91 @@ const StarField: React.FC<StarFieldProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // 创建高分辨率画布
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
+    // 设置画布尺寸为窗口大小
+    const setCanvasSize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
     
-    // 设置正确的CSS尺寸
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
+    setCanvasSize();
+    window.addEventListener('resize', setCanvasSize);
     
-    ctx.scale(dpr, dpr);
-    
-    // 生成星星
-    const stars: {
-      x: number;
-      y: number;
-      radius: number;
-      color: string;
-      velocity: number;
-      alpha: number;
-      alphaDirection: number;
-      twinkle: boolean;
-    }[] = [];
-    
-    // 蓝紫色调的星星
-    const colors = ['#8be9fd', '#bd93f9', '#50fa7b', '#f1fa8c', '#f8f8f2'];
-    
-    for (let i = 0; i < count; i++) {
-      const twinkle = Math.random() > 0.3; // 70% 的星星会闪烁
+    // 创建星星
+    const stars = [];
+    for (let i = 0; i < starCount; i++) {
+      const radius = Math.random() * 1.5 + 0.5;
       stars.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        radius: Math.random() * size + 0.5,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        velocity: Math.random() * speed,
-        alpha: Math.random(),
-        alphaDirection: Math.random() > 0.5 ? 0.005 : -0.005,
-        twinkle: twinkle
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: radius,
+        color: Math.random() > 0.2 ? 'rgba(255, 255, 255, 1)' : 'rgba(210, 230, 255, 1)',
+        depth: Math.random() * depth,
+        opacity: Math.random() * 0.8 + 0.2,
+        speed: (Math.random() * 0.5 + 0.1) * speed,
+        directionX: (Math.random() - 0.5) * 0.2,
+        directionY: (Math.random() - 0.5) * 0.1
       });
     }
     
-    // 渲染函数
-    const render = () => {
+    // 简化的绘制函数
+    const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(10, 10, 25, 0.8)';
-      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
       
+      if (backgroundColor !== 'transparent') {
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      
+      // 绘制星星
       stars.forEach(star => {
+        // 移动星星
+        star.x += star.directionX;
+        star.y += star.directionY;
+        
+        // 如果超出边界，从另一侧重新进入
+        if (star.x < -10) star.x = canvas.width + 10;
+        if (star.x > canvas.width + 10) star.x = -10;
+        if (star.y < -10) star.y = canvas.height + 10;
+        if (star.y > canvas.height + 10) star.y = -10;
+        
+        // 绘制星星
         ctx.beginPath();
-        
-        // 增强发光效果
-        if (glow) {
-          ctx.shadowBlur = star.radius * 8;  // 增加辉光范围
-          ctx.shadowColor = star.color;
-        }
-        
-        ctx.globalAlpha = star.alpha;
-        ctx.fillStyle = star.color;
         ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        
+        // 设置颜色和透明度
+        const flickerOpacity = star.opacity * (0.7 + 0.3 * Math.sin(Date.now() * 0.001 * star.speed));
+        ctx.fillStyle = star.color.replace('1)', `${flickerOpacity})`);
         ctx.fill();
         
-        // 移动星星
-        star.y += star.velocity;
-        
-        // 如果星星移出屏幕底部，重新在顶部生成
-        if (star.y > window.innerHeight) {
-          star.y = 0;
-          star.x = Math.random() * window.innerWidth;
-        }
-        
-        // 更新增强的闪烁效果
-        if (star.twinkle) {
-          star.alpha += star.alphaDirection;
-          
-          if (star.alpha > 1) {
-            star.alpha = 1;
-            star.alphaDirection *= -1;
-            star.alphaDirection *= (Math.random() * 0.5 + 0.5); // 增加随机性
-          } else if (star.alpha < 0.2) {
-            star.alpha = 0.2;
-            star.alphaDirection *= -1;
-            star.alphaDirection *= (Math.random() * 0.5 + 0.5); // 增加随机性
-          }
+        // 为亮星星添加光晕
+        if (star.radius > 1.2) {
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.radius * 3, 0, Math.PI * 2);
+          const glow = ctx.createRadialGradient(
+            star.x, star.y, star.radius * 0.5,
+            star.x, star.y, star.radius * 3
+          );
+          glow.addColorStop(0, star.color.replace('1)', '0.3)'));
+          glow.addColorStop(1, star.color.replace('1)', '0)'));
+          ctx.fillStyle = glow;
+          ctx.fill();
         }
       });
       
-      requestAnimationFrame(render);
+      requestAnimationFrame(draw);
     };
     
-    render();
-    
-    // 处理窗口尺寸变化
-    const handleResize = () => {
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
-      ctx.scale(dpr, dpr);
-    };
-    
-    window.addEventListener('resize', handleResize);
+    draw();
     
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', setCanvasSize);
     };
-  }, [count, speed, size, glow]);
+  }, [starCount, depth, speed, backgroundColor]);
   
   return (
-    <canvas 
-      ref={canvasRef} 
-      className="absolute inset-0 z-0"
-      style={{ background: 'linear-gradient(to bottom, #0a0a1a, #1a1a3a)' }}
+    <canvas
+      ref={canvasRef}
+      className="fixed top-0 left-0 w-full h-full pointer-events-none z-0"
     />
   );
 };
