@@ -201,11 +201,11 @@ const Index = () => {
       y: Math.random() * (window.innerHeight * 0.6) + window.innerHeight * 0.2
     };
     
-    // 根据消息类型选择颜色
-    let color: 'blue' | 'purple' | 'cyan' | 'pink' = 'blue';
-    if (data.audioId && !data.imageId) color = 'purple';
-    else if (!data.audioId && data.imageId) color = 'cyan';
-    else if (data.audioId && data.imageId) color = 'pink';
+    // 随机选择颜色，而不是根据消息类型
+    const colors: ('blue' | 'purple' | 'cyan' | 'pink' | 'orange' | 'green' | 'peach' | 'mint')[] = 
+      ['blue', 'purple', 'cyan', 'pink', 'orange', 'green', 'peach', 'mint'];
+    
+    const color = colors[Math.floor(Math.random() * colors.length)];
     
     // 根据内容长度选择大小
     let size: 'sm' | 'md' | 'lg' = 'md';
@@ -446,7 +446,7 @@ const Index = () => {
         <div className="flex flex-col h-[calc(100vh-80px)]">
           <div className="flex justify-center items-center relative py-4">
             {/* 居中显示标题 */}
-            <h1 className="text-xl sm:text-2xl font-bold glow-text absolute left-1/2 transform -translate-x-1/2">追波</h1>
+            <h1 className="text-xl sm:text-2xl font-bold glow-text absolute left-1/2 transform -translate-x-1/2">⚡️追⚡️波⚡️</h1>
             
             {/* 将按钮放在右侧 */}
             <div className="flex gap-2 absolute right-0">

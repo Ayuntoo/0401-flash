@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Mic, Send, X, Image } from 'lucide-react';
+import { Mic, Send, X, Image, Sparkles } from 'lucide-react';
 import { toast } from "sonner";
 import { saveMedia } from '@/utils/storage';
 import { v4 as uuidv4 } from 'uuid';
@@ -28,6 +28,8 @@ const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [audioId, setAudioId] = useState<string | null>(null);
   const [imageId, setImageId] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // 处理录音
   const handleRecording = async () => {
@@ -131,20 +133,29 @@ const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) 
       type = 'image';
     }
 
-    onSubmit({
-      text: text.trim(),
-      audioId: audioId || undefined, // 现在传递ID而不是URL
-      imageId: imageId || undefined, // 现在传递ID而不是URL
-      type
-    });
-
-    // 重置表单
-    setText('');
-    setAudioUrl(null);
-    setAudioId(null);
-    setImageUrl(null);
-    setImageId(null);
-    onClose();
+    // 开始发送动画
+    setIsSending(true);
+    
+    // 0.5秒后关闭弹窗
+    setTimeout(() => {
+      // 再等0.5秒后创建新的光球
+      setTimeout(() => {
+        onSubmit({
+          text: text.trim(),
+          audioId: audioId || undefined,
+          imageId: imageId || undefined,
+          type
+        });
+        setText('');
+        setAudioUrl(null);
+        setAudioId(null);
+        setImageUrl(null);
+        setImageId(null);
+        setIsSending(false);
+      }, 500);
+      
+      onClose();
+    }, 500);
 
     toast.success("光波已发送到宇宙中", {
       position: "top-center", 
@@ -153,18 +164,29 @@ const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) 
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900/90 border border-cosmic-light/30 backdrop-blur-lg text-white max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-center glow-text text-xl">发送光波消息</DialogTitle>
+    <Dialog open={isOpen} onOpenChange={!isSending ? onClose : undefined}>
+      <DialogContent 
+        className={`sm:max-w-md bg-gray-900/95 backdrop-blur-lg border border-gray-700/50 text-white transition-all duration-500 ${
+          isSending 
+            ? 'scale-50 opacity-0 translate-y-[-50%]' 
+            : 'scale-100 opacity-100'
+        }`}
+      >
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-center text-xl font-bold text-white flex items-center justify-center">
+            <Sparkles className="h-5 w-5 text-blue-400 mr-2" />
+            发送光波消息
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
-          <Textarea 
-            placeholder="输入你的消息..." 
-            className="bg-gray-800/50 border-cosmic-light/30 text-white placeholder:text-gray-400 resize-none h-24"
+          <Textarea
+            ref={textareaRef}
+            placeholder="输入你想发送到宇宙的消息..."
+            className="bg-gray-800/70 border-gray-700/50 text-white resize-none h-32"
             value={text}
             onChange={(e) => setText(e.target.value)}
+            autoFocus
           />
           
           {audioUrl && (
@@ -207,32 +229,22 @@ const MessageForm: React.FC<MessageFormProps> = ({ isOpen, onClose, onSubmit }) 
             className="hidden"
           />
           
-          <div className="flex gap-2 justify-between">
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleRecording} 
-                size="icon" 
-                variant={isRecording ? "destructive" : "outline"}
-                className={isRecording ? "" : "bg-gray-800/70 border-cosmic-light/30 hover:bg-gray-700"}
-              >
-                <Mic size={18} className={isRecording ? "animate-pulse" : "text-cosmic-cyan"} />
+          <div className="flex justify-between items-center">
+            <div className="flex space-x-2">
+              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-gray-800">
+                <Mic className="h-5 w-5" />
               </Button>
-              
-              <Button 
-                onClick={handleImageButtonClick} 
-                size="icon" 
-                variant="outline"
-                className="bg-gray-800/70 border-cosmic-light/30 hover:bg-gray-700"
-              >
-                <Image size={18} className="text-cosmic-cyan" />
+              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-gray-800">
+                <Image className="h-5 w-5" />
               </Button>
             </div>
             
             <Button 
-              onClick={handleSubmit} 
-              className="cosmic-button px-4 py-2"
+              onClick={handleSubmit}
+              disabled={isSending || !text.trim()}
+              className="cosmic-button"
             >
-              <Send size={18} className="mr-2" />
+              <Send className="mr-2 h-4 w-4" />
               发送到宇宙
             </Button>
           </div>

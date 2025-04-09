@@ -8,7 +8,7 @@ export interface MessageType {
   text: string;
   type: 'text' | 'audio' | 'image' | 'mixed';
   position: Position;
-  color: 'blue' | 'purple' | 'cyan' | 'pink';
+  color: 'blue' | 'purple' | 'cyan' | 'pink' | 'orange' | 'green' | 'peach' | 'mint';
   size: 'sm' | 'md' | 'lg';
   created: number;
   senderName?: string;
