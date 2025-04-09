@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useNavigate } from 'react-router-dom';
 import AvatarUploader from '@/components/AvatarUploader';
 import { getAvatar } from '@/utils/storage';
+import { isSubscribed, getSubscriptionInfo } from '@/services/subscription';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -24,6 +25,11 @@ const Profile = () => {
   // 头像相关状态
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isAvatarUploaderOpen, setIsAvatarUploaderOpen] = useState(false);
+  
+  // 在组件中添加订阅状态
+  const [userSubscription, setUserSubscription] = useState<{isSubscribed: boolean, plan?: string}>(
+    {isSubscribed: false}
+  );
   
   // 从本地存储加载用户信息和头像
   useEffect(() => {
@@ -55,6 +61,16 @@ const Profile = () => {
       );
     }
   }, [nickname]);
+  
+  // 在 useEffect 中加载订阅状态
+  useEffect(() => {
+    // 加载订阅信息
+    const subscription = getSubscriptionInfo();
+    setUserSubscription({
+      isSubscribed: isSubscribed(),
+      plan: subscription.plan
+    });
+  }, []);
   
   // 开始编辑昵称
   const startEditingNickname = () => {
@@ -127,6 +143,42 @@ const Profile = () => {
       inputRef.current.focus();
     }
     toast.info("已生成随机昵称");
+  };
+  
+  // 格式化时间
+  const formatTime = (timestamp: number): string => {
+    const now = new Date();
+    const messageDate = new Date(timestamp);
+    const diffInSeconds = Math.floor((now.getTime() - messageDate.getTime()) / 1000);
+    
+    // 如果时间差小于1分钟，显示"刚刚"
+    if (diffInSeconds < 60) {
+      return '刚刚';
+    }
+    
+    // 如果时间差小于1小时，显示分钟数
+    if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes}分钟前`;
+    }
+    
+    // 如果时间差小于24小时，显示小时数
+    if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours}小时前`;
+    }
+    
+    // 如果时间差小于30天，显示天数
+    if (diffInSeconds < 2592000) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days}天前`;
+    }
+    
+    // 如果时间差超过30天，显示具体日期（年-月-日）
+    const year = messageDate.getFullYear();
+    const month = String(messageDate.getMonth() + 1).padStart(2, '0');
+    const day = String(messageDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
   
   return (
@@ -241,6 +293,17 @@ const Profile = () => {
               <p className="text-sm text-gray-400">光波等级：初级探索者</p>
             </div>
           </div>
+          
+          {/* 订阅状态标签 */}
+          {userSubscription.isSubscribed ? (
+            <div className="px-3 py-1 text-xs rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+              {userSubscription.plan === 'monthly' ? '月度会员' : '年度会员'}
+            </div>
+          ) : (
+            <div className="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300">
+              免费用户
+            </div>
+          )}
         </div>
         
         {/* 光波标签页 */}
@@ -265,6 +328,9 @@ const Profile = () => {
                     <p className="text-xs text-center text-gray-400 truncate w-full">
                       {message.text?.substring(0, 10)}
                       {message.text && message.text.length > 10 ? '...' : ''}
+                    </p>
+                    <p className="text-xs text-center text-gray-500 mt-1">
+                      {message.created ? formatTime(message.created) : '未知时间'}
                     </p>
                   </div>
                 ))}
@@ -291,6 +357,9 @@ const Profile = () => {
                     <p className="text-xs text-center text-gray-400 truncate w-full">
                       {message.text?.substring(0, 10)}
                       {message.text && message.text.length > 10 ? '...' : ''}
+                    </p>
+                    <p className="text-xs text-center text-gray-500 mt-1">
+                      {message.created ? formatTime(message.created) : '未知时间'}
                     </p>
                   </div>
                 ))}

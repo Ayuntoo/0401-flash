@@ -12,6 +12,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
 import GeometricShapes from '@/components/GeometricShapes';
 import { openDatabase } from '@/utils/storage';
+import { canUnlockFreeOrb, incrementUnlockedFreeOrbCount, isSubscribed } from '@/services/subscription';
+import SubscriptionModal from '@/components/SubscriptionModal';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -40,6 +42,10 @@ const Index = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasHeight = typeof window !== 'undefined' ? window.innerHeight - 100 : 600;
   const [userNickname, setUserNickname] = useState<string>('宇宙旅行者');
+
+  // 在 Index 组件中添加订阅状态和订阅弹窗控制状态
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [pendingUnlockMessageId, setPendingUnlockMessageId] = useState<string | null>(null);
 
   // 首次渲染时加载示例消息
   useEffect(() => {
@@ -253,13 +259,56 @@ const Index = () => {
     }
   };
   
-  // 处理解锁消息
+  // 修改处理解锁消息函数
   const handleUnlockMessage = (messageId: string) => {
-    if (!unlockedOrbIds.has(messageId)) {
+    // 如果已订阅，直接解锁
+    if (isSubscribed()) {
+      if (!unlockedOrbIds.has(messageId)) {
+        const newUnlockedIds = new Set(unlockedOrbIds);
+        newUnlockedIds.add(messageId);
+        setUnlockedOrbIds(newUnlockedIds);
+        toast.success("已解锁光波信息");
+      }
+      return;
+    }
+    
+    // 未订阅时，检查是否还能解锁免费光球
+    if (canUnlockFreeOrb()) {
+      if (!unlockedOrbIds.has(messageId)) {
+        // 记录已使用的免费次数
+        incrementUnlockedFreeOrbCount();
+        
+        // 添加到已解锁集合
+        const newUnlockedIds = new Set(unlockedOrbIds);
+        newUnlockedIds.add(messageId);
+        setUnlockedOrbIds(newUnlockedIds);
+        
+        // 如果这是第3个免费解锁的光球，提示用户
+        if (incrementUnlockedFreeOrbCount() >= 3) {
+          toast.info("你已使用所有免费解锁次数，订阅会员可解锁更多光波");
+        } else {
+          toast.success("已解锁光波信息");
+        }
+      }
+    } else {
+      // 已达到免费限制，显示订阅弹窗
+      setPendingUnlockMessageId(messageId);
+      setIsSubscriptionModalOpen(true);
+    }
+  };
+  
+  // 添加订阅成功的处理函数
+  const handleSubscriptionSuccess = () => {
+    // 关闭订阅弹窗
+    setIsSubscriptionModalOpen(false);
+    
+    // 如果有待解锁的消息，立即解锁
+    if (pendingUnlockMessageId) {
       const newUnlockedIds = new Set(unlockedOrbIds);
-      newUnlockedIds.add(messageId);
+      newUnlockedIds.add(pendingUnlockMessageId);
       setUnlockedOrbIds(newUnlockedIds);
-      toast.success("已解锁光波信息");
+      setPendingUnlockMessageId(null);
+      toast.success("订阅成功！光波信息已解锁");
     }
   };
   
@@ -344,7 +393,7 @@ const Index = () => {
         <div className="flex flex-col h-[calc(100vh-80px)]">
           <div className="flex justify-center items-center relative py-4">
             {/* 居中显示标题 */}
-            <h1 className="text-xl sm:text-2xl font-bold glow-text absolute left-1/2 transform -translate-x-1/2">光波追捕</h1>
+            <h1 className="text-xl sm:text-2xl font-bold glow-text absolute left-1/2 transform -translate-x-1/2">追波</h1>
             
             {/* 将按钮放在右侧 */}
             <div className="flex gap-2 absolute right-0">
@@ -374,7 +423,10 @@ const Index = () => {
                 endPosition={path.end}
                 color={path.color}
                 animate={true}
-                duration={800}
+                duration={200}
+                thickness={2}
+                segments={6}
+                variance={0.3}
               />
             ))}
             
@@ -386,8 +438,11 @@ const Index = () => {
                 endPosition={path.end}
                 color={path.color}
                 animate={true}
-                duration={2000}
-                thickness={1.5}
+                duration={600}
+                thickness={1.8}
+                segments={8}
+                variance={0.35}
+                flashEffect={true}
               />
             ))}
             
@@ -444,6 +499,13 @@ const Index = () => {
               onReply={(replyText) => handleReplyMessage(selectedMessage, replyText)}
             />
           )}
+          
+          {/* 订阅弹窗 */}
+          <SubscriptionModal
+            isOpen={isSubscriptionModalOpen}
+            onClose={() => setIsSubscriptionModalOpen(false)}
+            onSuccess={handleSubscriptionSuccess}
+          />
         </div>
       </div>
     </div>

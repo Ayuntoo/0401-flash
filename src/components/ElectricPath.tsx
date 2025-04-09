@@ -1,104 +1,141 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Position } from '@/types';
 
 interface ElectricPathProps {
-  startPosition: { x: number; y: number };
-  endPosition: { x: number; y: number };
-  color?: string;
-  thickness?: number;
+  startPosition: Position;
+  endPosition: Position;
+  color: string;
   animate?: boolean;
   duration?: number;
-  onAnimationEnd?: () => void;
+  thickness?: number;
+  segments?: number;
+  variance?: number;
+  flashEffect?: boolean;
 }
 
 const ElectricPath: React.FC<ElectricPathProps> = ({
   startPosition,
   endPosition,
-  color = "#00e5ff",
-  thickness = 2,
+  color = 'blue',
   animate = true,
-  duration = 800, // Further reduced from 1000ms to 800ms
-  onAnimationEnd
+  duration = 500,
+  thickness = 1.5,
+  segments = 5,
+  variance = 0.25,
+  flashEffect = false
 }) => {
-  const [path, setPath] = useState<string>("");
-  const [isAnimating, setIsAnimating] = useState<boolean>(animate);
-
-  // Generate a lightning-like path between two points
+  const [opacity, setOpacity] = useState(1);
+  const [pathD, setPathD] = useState('');
+  
+  // 根据颜色返回对应的CSS颜色值
+  const getColorValue = (color: string) => {
+    const colorMap: Record<string, string> = {
+      'blue': 'rgba(56, 189, 248, VAR)',
+      'purple': 'rgba(168, 85, 247, VAR)',
+      'cyan': 'rgba(34, 211, 238, VAR)',
+      'pink': 'rgba(244, 114, 182, VAR)',
+      'orange': 'rgba(251, 146, 60, VAR)',
+      'green': 'rgba(52, 211, 153, VAR)',
+    };
+    return colorMap[color] || 'rgba(56, 189, 248, VAR)';
+  };
+  
+  // 生成锯齿状闪电路径
   useEffect(() => {
-    const generateElectricPath = () => {
+    const generateLightningPath = () => {
       const dx = endPosition.x - startPosition.x;
       const dy = endPosition.y - startPosition.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      // Number of segments based on distance - increased for more zigzags
-      const segments = Math.max(7, Math.floor(distance / 20));
+      // 创建路径点
+      const points = [];
+      points.push({ x: startPosition.x, y: startPosition.y });
       
-      // Start point
-      let pathString = `M${startPosition.x},${startPosition.y} `;
-      
-      // Generate zigzag points
+      // 创建中间点 - 更多的分段和更大的变化
       for (let i = 1; i < segments; i++) {
         const ratio = i / segments;
+        const x = startPosition.x + dx * ratio;
+        const y = startPosition.y + dy * ratio;
         
-        // Base point on straight line
-        const baseX = startPosition.x + dx * ratio;
-        const baseY = startPosition.y + dy * ratio;
+        // 添加随机偏移 - 更大的偏移量创造更锯齿的效果
+        const offset = Math.random() * distance * variance;
+        const angle = Math.random() * Math.PI * 2;
         
-        // Random offset perpendicular to line
-        const perpX = -dy / distance;
-        const perpY = dx / distance;
-        
-        // More extreme randomness for lightning effect
-        const jitterFactor = Math.sin(ratio * Math.PI) * 35;
-        const randomOffset = (Math.random() - 0.5) * jitterFactor;
-        
-        const pointX = baseX + perpX * randomOffset;
-        const pointY = baseY + perpY * randomOffset;
-        
-        pathString += `L${pointX},${pointY} `;
+        points.push({
+          x: x + Math.cos(angle) * offset,
+          y: y + Math.sin(angle) * offset
+        });
       }
       
-      // End point
-      pathString += `L${endPosition.x},${endPosition.y}`;
+      points.push({ x: endPosition.x, y: endPosition.y });
       
-      return pathString;
+      // 构建SVG路径
+      let d = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 1; i < points.length; i++) {
+        d += ` L ${points[i].x} ${points[i].y}`;
+      }
+      
+      setPathD(d);
     };
-
-    setPath(generateElectricPath());
-
+    
+    generateLightningPath();
+    
+    // 如果启用了闪烁效果，添加随机闪烁
+    if (flashEffect) {
+      const flashInterval = setInterval(() => {
+        setOpacity(Math.random() * 0.5 + 0.5); // 随机闪烁效果
+      }, 100);
+      
+      return () => clearInterval(flashInterval);
+    }
+  }, [startPosition, endPosition, segments, variance, flashEffect]);
+  
+  // 动画结束时删除路径
+  useEffect(() => {
     if (animate) {
       const timer = setTimeout(() => {
-        setIsAnimating(false);
-        if (onAnimationEnd) onAnimationEnd();
-      }, duration);
-
+        setOpacity(0);
+      }, duration - 100); // 留出淡出时间
+      
       return () => clearTimeout(timer);
     }
-  }, [startPosition, endPosition, animate, duration, onAnimationEnd]);
-
+  }, [animate, duration]);
+  
+  // 获取发光颜色
+  const glowColor = getColorValue(color).replace('VAR', '0.6');
+  const strokeColor = getColorValue(color).replace('VAR', `${opacity}`);
+  
   return (
-    <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
+    <svg 
+      className="absolute top-0 left-0 w-full h-full z-10 pointer-events-none"
+      style={{ transition: `opacity ${animate ? 100 : 0}ms ease-out` }}
+    >
       <defs>
-        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
+        <filter id={`glow-${color}`}>
+          <feGaussianBlur stdDeviation="3" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
       </defs>
-      <path
-        d={path}
+      
+      {/* 发光效果底层 */}
+      <path 
+        d={pathD}
+        stroke={glowColor}
+        strokeWidth={thickness * 3}
         fill="none"
-        stroke={color}
-        strokeWidth={thickness}
         strokeLinecap="round"
-        className={isAnimating ? "path" : ""}
-        style={
-          isAnimating
-            ? {
-                animation: `travel ${duration / 1000}s forwards`,
-                filter: "url(#glow)"
-              }
-            : { opacity: 0 }
-        }
+        filter={`url(#glow-${color})`}
+        style={{ opacity: opacity * 0.7 }}
+      />
+      
+      {/* 主体电光线 */}
+      <path 
+        d={pathD}
+        stroke={strokeColor}
+        strokeWidth={thickness}
+        fill="none"
+        strokeLinecap="round"
+        style={{ opacity }}
       />
     </svg>
   );
