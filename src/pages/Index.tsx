@@ -115,40 +115,48 @@ const Index = () => {
   
   // 在现有的 useEffect 钩子之后添加随机电光效果
   useEffect(() => {
-    // 每隔几秒随机连接两个光球
-    const randomPathInterval = setInterval(() => {
-      // 如果光球少于2个，不创建路径
-      if (messages.length < 2) return;
+    // 创建随机电光效果
+    const createRandomPaths = () => {
+      if (!containerRef.current || messages.length < 2) return;
       
-      // 随机选择两个不同的光球
-      const availableMessages = [...messages];
-      const randomIndex1 = Math.floor(Math.random() * availableMessages.length);
-      const message1 = availableMessages[randomIndex1];
+      // 随机选择两个不同的消息
+      const msgCount = messages.length;
+      const idx1 = Math.floor(Math.random() * msgCount);
+      let idx2 = Math.floor(Math.random() * msgCount);
       
-      // 移除已选择的光球，避免选到同一个
-      availableMessages.splice(randomIndex1, 1);
+      // 确保选择两个不同的消息
+      while (idx1 === idx2 && msgCount > 1) {
+        idx2 = Math.floor(Math.random() * msgCount);
+      }
       
-      const randomIndex2 = Math.floor(Math.random() * availableMessages.length);
-      const message2 = availableMessages[randomIndex2];
+      const message1 = messages[idx1];
+      const message2 = messages[idx2];
       
-      // 创建路径
-      const newPathId = uuidv4();
-      const randomPath = {
-        id: newPathId,
+      // 创建新的电光路径
+      const newPath = {
+        id: uuidv4(),
         start: message1.position,
         end: message2.position,
-        color: Math.random() > 0.5 ? message1.color : message2.color
+        color: ['blue', 'purple', 'cyan', 'pink'][Math.floor(Math.random() * 4)]
       };
       
-      setRandomPaths(prev => [...prev, randomPath]);
+      setRandomPaths(prev => [...prev, newPath]);
       
-      // 2秒后移除该路径
+      // 一段时间后移除这条路径
       setTimeout(() => {
-        setRandomPaths(prev => prev.filter(p => p.id !== newPathId));
-      }, 2000);
-    }, 5000); // 每5秒创建一次随机连接
+        setRandomPaths(prev => prev.filter(p => p.id !== newPath.id));
+      }, 2000); // 闪电显示2秒后消失
+    };
     
-    return () => clearInterval(randomPathInterval);
+    // 定期创建随机电光
+    const interval = setInterval(() => {
+      // 有50%的概率创建随机电光
+      if (Math.random() > 0.5) {
+        createRandomPaths();
+      }
+    }, 1000); // 从原来的时间间隔改为1秒
+    
+    return () => clearInterval(interval);
   }, [messages]);
   
   // 初始化 IndexedDB 数据库
@@ -381,6 +389,37 @@ const Index = () => {
     localStorage.setItem('cosmicMessages', JSON.stringify(sampleMessages));
     toast.success("已重置光波");
   };
+
+  // 修改自动生成消息的时间间隔
+  useEffect(() => {
+    // 自动生成新消息的定时器
+    const messageInterval = setInterval(() => {
+      // 每次有20%的概率生成新消息，且消息总数小于10个
+      if (Math.random() < 0.2 && messages.length < 10) {
+        const colors = ['blue', 'purple', 'cyan', 'pink', 'orange', 'green'];
+        const sampleNames = ["张伟", "李娜", "王芳", "刘阳", "陈磊", "赵华", "周强"];
+        
+        // 随机位置，避开屏幕边缘
+        const x = Math.random() * (window.innerWidth * 0.8) + window.innerWidth * 0.1;
+        const y = Math.random() * (canvasHeight * 0.8) + canvasHeight * 0.1;
+        
+        const newMessage: MessageType = {
+          id: uuidv4(),
+          text: generateRandomMessage(),
+          type: 'text',
+          position: { x, y },
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: Math.random() > 0.7 ? 'lg' : (Math.random() > 0.5 ? 'md' : 'sm'),
+          created: Date.now(),
+          senderName: sampleNames[Math.floor(Math.random() * sampleNames.length)]
+        };
+        
+        setMessages(prev => [...prev, newMessage]);
+      }
+    }, 1000); // 从原来的时间间隔改为1秒
+    
+    return () => clearInterval(messageInterval);
+  }, [messages, canvasHeight]);
 
   return (
     <div className="min-h-screen cosmic-bg overflow-hidden relative">
