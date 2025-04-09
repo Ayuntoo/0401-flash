@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Camera, Edit2, Shuffle, X, Check } from 'lucide-react';
+import { ArrowLeft, User, Camera, Edit2, Shuffle, X, Check, LogOut } from 'lucide-react';
 import { MessageType } from '@/types';
 import EnergyOrb from '@/components/EnergyOrb';
 import StarField from '@/components/StarField';
@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import AvatarUploader from '@/components/AvatarUploader';
 import { getAvatar } from '@/utils/storage';
 import { isSubscribed, getSubscriptionInfo } from '@/services/subscription';
+import { logout } from '@/services/auth';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -181,6 +182,13 @@ const Profile = () => {
     return `${year}-${month}-${day}`;
   };
   
+  // 添加处理登出的函数
+  const handleLogout = () => {
+    logout(); // 调用登出函数清除登录状态
+    toast.success('已成功登出');
+    navigate('/auth'); // 导航到登录页面
+  };
+  
   return (
     <div className="relative h-screen overflow-hidden">
       {/* 更新背景部分，添加闪烁的星星和几何元素 */}
@@ -190,15 +198,24 @@ const Profile = () => {
       </div>
       
       <div className="relative h-full flex flex-col overflow-hidden z-10 p-4">
-        {/* 返回按钮 */}
-        <div className="flex items-center mb-6">
+        {/* 顶部导航栏 */}
+        <div className="flex justify-between items-center mb-8">
           <Button 
-            onClick={() => navigate('/')}
             variant="ghost" 
-            className="text-white hover:bg-blue-800/20"
+            size="icon"
+            onClick={() => navigate('/')}
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            返回
+            <ArrowLeft className="text-white/80 hover:text-white" />
+          </Button>
+          
+          {/* 添加登出按钮 */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={handleLogout}
+            className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+          >
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
         

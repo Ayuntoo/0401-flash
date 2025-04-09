@@ -49,12 +49,12 @@ const Index = () => {
 
   // 首次渲染时加载示例消息
   useEffect(() => {
-    const sampleNames = ["张伟", "李娜", "王芳", "刘阳", "陈磊"];
+    const sampleNames = ["张伟", "李娜", "王芳", "刘阳", "陈磊", "赵华", "周强"];
     
     const sampleMessages: MessageType[] = [
       {
         id: uuidv4(),
-        text: "来自宇宙的问候！",
+        text: "你好，地球人，这是一声来自宇宙的问候！",
         type: 'text',
         position: { x: window.innerWidth * 0.2, y: window.innerHeight * 0.3 },
         color: 'blue',
@@ -64,7 +64,7 @@ const Index = () => {
       },
       {
         id: uuidv4(),
-        text: "多么美丽的宇宙啊",
+        text: "多么美丽的星球啊，有什么好吃的吗？",
         type: 'text',
         position: { x: window.innerWidth * 0.7, y: window.innerHeight * 0.2 },
         color: 'purple',
@@ -74,28 +74,42 @@ const Index = () => {
       },
       {
         id: uuidv4(),
-        text: "宇宙能量在流动",
+        text: "我是你看不见的流动的暗物质",
         type: 'text',
         position: { x: window.innerWidth * 0.5, y: window.innerHeight * 0.6 },
         color: 'cyan',
         size: 'sm',
         created: Date.now(),
         senderName: sampleNames[2]
+      },
+      {
+        id: uuidv4(),
+        text: "星光指引前方的山脉向上生长",
+        type: 'text',
+        position: { x: window.innerWidth * 0.25, y: window.innerHeight * 0.7 },
+        color: 'pink',
+        size: 'lg',
+        created: Date.now(),
+        senderName: sampleNames[3]
+      },
+      {
+        id: uuidv4(),
+        text: "有人一起探索无尽可能吗？",
+        type: 'text',
+        position: { x: window.innerWidth * 0.8, y: window.innerHeight * 0.5 },
+        color: 'orange',
+        size: 'md',
+        created: Date.now(),
+        senderName: sampleNames[4]
       }
     ];
     
-    const storedMessages = localStorage.getItem('cosmicMessages');
-    if (storedMessages) {
-      try {
-        const parsedMessages = JSON.parse(storedMessages);
-        setMessages(parsedMessages);
-      } catch (err) {
-        console.error("解析存储消息时出错:", err);
-        setMessages(sampleMessages);
-      }
-    } else {
-      setMessages(sampleMessages);
-    }
+    // 清除旧数据，确保显示新的5个光球
+    localStorage.removeItem('cosmicMessages');
+    setMessages(sampleMessages);
+    
+    // 保存新的示例消息到本地存储
+    localStorage.setItem('cosmicMessages', JSON.stringify(sampleMessages));
   }, []);
 
   // 消息更新时存储到本地存储
