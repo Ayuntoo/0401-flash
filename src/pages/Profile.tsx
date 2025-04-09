@@ -190,14 +190,11 @@ const Profile = () => {
   };
   
   return (
-    <div className="relative h-screen overflow-hidden">
-      {/* 更新背景部分，添加闪烁的星星和几何元素 */}
-      <div className="absolute inset-0 cosmic-bg z-0">
-        <StarField count={500} speed={0.05} size={2.5} glow={true} />
-        <GeometricShapes count={25} />
-      </div>
+    <div className="min-h-screen bg-black text-white overflow-hidden relative">
+      <StarField starCount={150} speed={0.2} />
+      <GeometricShapes quantity={10} />
       
-      <div className="relative h-full flex flex-col overflow-hidden z-10 p-4">
+      <div className="relative h-full flex flex-col overflow-hidden z-10 p-4 max-w-[960px] mx-auto">
         {/* 顶部导航栏 */}
         <div className="flex justify-between items-center mb-8">
           <Button 
@@ -223,56 +220,30 @@ const Profile = () => {
         <div className="bg-gray-800/60 backdrop-blur-md rounded-lg border border-gray-700/50 p-6 mb-8 shadow-glow">
           <div className="flex items-center gap-4">
             <div 
-              className="relative w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center cursor-pointer shadow-glow overflow-hidden"
-              onClick={handleAvatarUpload}
+              className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-2 border-blue-500/50 bg-gray-900 flex items-center justify-center cursor-pointer"
+              onClick={() => setIsAvatarUploaderOpen(true)}
             >
               {avatarUrl ? (
-                <img 
-                  src={avatarUrl} 
-                  alt="用户头像" 
-                  className="w-full h-full object-cover"
-                />
+                <img src={avatarUrl} alt="用户头像" className="w-full h-full object-cover" />
               ) : (
-                <User size={40} className="text-white" />
+                <User className="w-8 h-8 text-gray-400" />
               )}
-              <div className="absolute bottom-0 right-0 bg-gray-800 rounded-full p-1">
-                <Camera size={16} className="text-gray-300" />
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                <Camera className="w-6 h-6 text-white" />
               </div>
             </div>
             
             <div className="flex-1">
               {isEditingNickname ? (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input 
-                      ref={inputRef}
-                      value={tempNickname}
-                      onChange={e => setTempNickname(e.target.value)}
-                      maxLength={12}
-                      className="bg-gray-700/50 border-gray-600/50 text-white"
-                      placeholder="请输入昵称"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleClearNickname}
-                      className="h-10 w-10 bg-gray-700/50 border-gray-600/50 hover:bg-gray-600/50"
-                      title="清空"
-                    >
-                      <X size={16} className="text-white" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={generateRandomName}
-                      className="h-10 w-10 bg-gray-700/50 border-gray-600/50 hover:bg-gray-600/50"
-                      title="随机取名"
-                    >
-                      <Shuffle size={16} className="text-cyan-400" />
-                    </Button>
-                  </div>
-                  
-                  <div className="flex justify-end gap-2 mt-2">
+                <div className="mb-2">
+                  <Input
+                    ref={inputRef}
+                    value={tempNickname}
+                    onChange={e => setTempNickname(e.target.value)}
+                    placeholder="输入你的昵称"
+                    className="bg-gray-700/50 border-gray-600/50 focus:border-blue-500/50 text-white"
+                  />
+                  <div className="flex gap-2 mt-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -312,13 +283,9 @@ const Profile = () => {
           </div>
           
           {/* 订阅状态标签 */}
-          {userSubscription.isSubscribed ? (
+          {userSubscription.isSubscribed && (
             <div className="px-3 py-1 text-xs rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white">
               {userSubscription.plan === 'monthly' ? '月度会员' : '年度会员'}
-            </div>
-          ) : (
-            <div className="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300">
-              免费用户
             </div>
           )}
         </div>
