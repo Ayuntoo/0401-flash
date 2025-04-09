@@ -342,9 +342,12 @@ const Index = () => {
       
       <div className="container mx-auto px-4 py-6 relative z-10">
         <div className="flex flex-col h-[calc(100vh-80px)]">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl sm:text-2xl font-bold glow-text">宇宙光波</h1>
-            <div className="flex gap-2">
+          <div className="flex justify-center items-center relative py-4">
+            {/* 居中显示标题 */}
+            <h1 className="text-xl sm:text-2xl font-bold glow-text absolute left-1/2 transform -translate-x-1/2">光波追捕</h1>
+            
+            {/* 将按钮放在右侧 */}
+            <div className="flex gap-2 absolute right-0">
               <Button 
                 variant="ghost" 
                 size="icon"
