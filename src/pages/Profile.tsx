@@ -9,6 +9,8 @@ import StarField from '@/components/StarField';
 import GeometricShapes from '@/components/GeometricShapes';
 import { toast } from "sonner";
 import { useNavigate } from 'react-router-dom';
+import AvatarUploader from '@/components/AvatarUploader';
+import { getAvatar } from '@/utils/storage';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -19,11 +21,21 @@ const Profile = () => {
   const [receivedMessages, setReceivedMessages] = useState<MessageType[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   
-  // 从本地存储加载用户信息
+  // 头像相关状态
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isAvatarUploaderOpen, setIsAvatarUploaderOpen] = useState(false);
+  
+  // 从本地存储加载用户信息和头像
   useEffect(() => {
     const savedNickname = localStorage.getItem('userNickname');
     if (savedNickname) {
       setNickname(savedNickname);
+    }
+    
+    // 加载头像
+    const savedAvatar = getAvatar();
+    if (savedAvatar) {
+      setAvatarUrl(savedAvatar);
     }
     
     // 加载消息数据
@@ -93,8 +105,12 @@ const Profile = () => {
   
   // 上传头像
   const handleAvatarUpload = () => {
-    // 这里简化处理，实际应该打开文件选择器
-    toast.info("头像上传功能即将上线");
+    setIsAvatarUploaderOpen(true);
+  };
+  
+  // 处理头像更改
+  const handleAvatarChange = (newAvatarUrl: string) => {
+    setAvatarUrl(newAvatarUrl);
   };
   
   // 生成随机昵称
@@ -138,10 +154,18 @@ const Profile = () => {
         <div className="bg-gray-800/60 backdrop-blur-md rounded-lg border border-gray-700/50 p-6 mb-8 shadow-glow">
           <div className="flex items-center gap-4">
             <div 
-              className="relative w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center cursor-pointer shadow-glow"
+              className="relative w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center cursor-pointer shadow-glow overflow-hidden"
               onClick={handleAvatarUpload}
             >
-              <User size={40} className="text-white" />
+              {avatarUrl ? (
+                <img 
+                  src={avatarUrl} 
+                  alt="用户头像" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={40} className="text-white" />
+              )}
               <div className="absolute bottom-0 right-0 bg-gray-800 rounded-full p-1">
                 <Camera size={16} className="text-gray-300" />
               </div>
@@ -179,20 +203,19 @@ const Profile = () => {
                     </Button>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button 
+                  <div className="flex justify-end gap-2 mt-2">
+                    <Button
                       variant="outline"
                       size="sm"
                       onClick={handleCancelEdit}
-                      className="bg-gray-700/50 border-gray-600/50"
+                      className="bg-gray-700/50 border-gray-600/50 text-white hover:bg-gray-600/50"
                     >
                       取消
                     </Button>
-                    <Button 
-                      onClick={handleSaveNickname}
+                    <Button
                       size="sm"
+                      onClick={handleSaveNickname}
                       className="cosmic-button"
-                      disabled={!tempNickname.trim()}
                     >
                       <Check size={14} className="mr-1" />
                       保存
@@ -200,16 +223,19 @@ const Profile = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold">{nickname}</h2>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={startEditingNickname}
-                    className="h-8 w-8"
-                  >
-                    <Edit2 size={16} className="text-gray-400" />
-                  </Button>
+                <div className="flex flex-col">
+                  <div className="flex items-center">
+                    <h3 className="text-xl font-bold mr-2">{nickname}</h3>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={startEditingNickname}
+                      className="h-7 w-7 text-white/70 hover:text-white hover:bg-blue-800/20"
+                    >
+                      <Edit2 size={14} />
+                    </Button>
+                  </div>
+                  <p className="text-gray-300 mt-1 text-sm">已发送 {sentMessages.length} 条光波</p>
                 </div>
               )}
               <p className="text-sm text-gray-400">光波等级：初级探索者</p>
@@ -277,6 +303,14 @@ const Profile = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* 头像上传组件 */}
+      <AvatarUploader
+        isOpen={isAvatarUploaderOpen}
+        onClose={() => setIsAvatarUploaderOpen(false)}
+        currentAvatar={avatarUrl}
+        onAvatarChange={handleAvatarChange}
+      />
     </div>
   );
 };

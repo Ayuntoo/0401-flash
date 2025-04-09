@@ -121,4 +121,21 @@ export const createMediaUrl = async (id: string): Promise<string | null> => {
     return URL.createObjectURL(blob);
   }
   return null;
+};
+
+// 保存头像
+export const saveAvatar = async (avatarData: string): Promise<string> => {
+  try {
+    // 保存到 localStorage
+    localStorage.setItem('userAvatar', avatarData);
+    return avatarData;
+  } catch (error) {
+    console.error('保存头像失败:', error);
+    throw error;
+  }
+};
+
+// 获取头像
+export const getAvatar = (): string | null => {
+  return localStorage.getItem('userAvatar');
 }; 
