@@ -1,1 +1,70 @@
- 
+/* 添加响应式布局相关的全局样式 */
+.cosmic-universe {
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+}
+
+/* 修复iOS Safari上100vh问题 */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* 优化光球在小屏幕上的展示 */
+@media (max-width: 640px) {
+  .orb.w-16 {
+    width: 3rem;
+    height: 3rem;
+  }
+  
+  .orb.w-24 {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+  
+  .orb.w-32 {
+    width: 6rem;
+    height: 6rem;
+  }
+}
+
+/* 电光路径适配小屏幕 */
+@media (max-width: 640px) {
+  .electric-path-svg {
+    stroke-width: 1.2px;
+  }
+}
+
+/* 防止页面内容被底部导航栏或控制条遮挡 */
+@supports (padding: max(0px)) {
+  .cosmic-universe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* 调整浮动动画在不同设备上的效果 */
+@media (max-width: 768px) {
+  .floating {
+    animation-duration: 2s;
+    animation-timing-function: ease-in-out;
+  }
+}
+
+/* 添加全局规则确保光球在电光路径上方 */
+.orb {
+  position: relative;
+  z-index: 10; /* 高于电光路径 */
+}
+
+/* 电光路径保持较低层级 */
+.electric-path-svg {
+  z-index: 5;
+}
+
+/* 确保连接点也得到适当处理 */
+.connection-point {
+  position: relative;
+  z-index: 4; /* 低于电光路径 */
+} 

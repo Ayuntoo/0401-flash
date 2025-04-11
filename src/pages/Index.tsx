@@ -4,6 +4,7 @@ import EnergyOrb from '@/components/EnergyOrb';
 import MessageForm from '@/components/MessageForm';
 import MessageViewer from '@/components/MessageViewer';
 import ElectricPath from '@/components/ElectricPath';
+import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { Button } from '@/components/ui/button';
 import { MessageType, Position } from '@/types';
 import { SendHorizonal, RotateCcw, UserCircle } from 'lucide-react';
@@ -46,6 +47,12 @@ const Index = () => {
   // 在 Index 组件中添加订阅状态和订阅弹窗控制状态
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [pendingUnlockMessageId, setPendingUnlockMessageId] = useState<string | null>(null);
+
+  // 添加窗口尺寸状态
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
 
   // 首次渲染时加载示例消息
   useEffect(() => {
@@ -195,22 +202,39 @@ const Index = () => {
     imageId?: string;
     type: 'text' | 'audio' | 'image' | 'mixed';
   }) => {
-    // 在当前视口内随机位置
+    // 使用相对位置，便于响应式调整
+    // 例如，x位置使用相对于视口宽度的百分比
     const position = {
-      x: Math.random() * (window.innerWidth * 0.8) + window.innerWidth * 0.1,
-      y: Math.random() * (window.innerHeight * 0.6) + window.innerHeight * 0.2
+      x: (Math.random() * 0.8 + 0.1) * windowDimensions.width, // 10% - 90%范围内
+      y: (Math.random() * 0.6 + 0.2) * windowDimensions.height // 20% - 80%范围内
     };
     
-    // 随机选择颜色，而不是根据消息类型
+    // 随机选择颜色
     const colors: ('blue' | 'purple' | 'cyan' | 'pink' | 'orange' | 'green' | 'peach' | 'mint')[] = 
       ['blue', 'purple', 'cyan', 'pink', 'orange', 'green', 'peach', 'mint'];
     
     const color = colors[Math.floor(Math.random() * colors.length)];
     
-    // 根据内容长度选择大小
-    let size: 'sm' | 'md' | 'lg' = 'md';
-    if (data.text.length > 100) size = 'lg';
-    else if (data.text.length < 20) size = 'sm';
+    // 根据内容长度和随机因素综合决定大小
+    let size: 'sm' | 'md' | 'lg';
+    
+    // 基础大小逻辑
+    if (data.text.length > 100) {
+      // 长文本默认大号，但有10%概率是中号
+      size = Math.random() < 0.1 ? 'md' : 'lg';
+    } else if (data.text.length < 20) {
+      // 短文本默认小号，但有30%概率是中号，5%概率是大号
+      const rand = Math.random();
+      if (rand < 0.05) size = 'lg';
+      else if (rand < 0.35) size = 'md';
+      else size = 'sm';
+    } else {
+      // 中等文本默认中号，但有20%概率是小号，20%概率是大号
+      const rand = Math.random();
+      if (rand < 0.2) size = 'lg';
+      else if (rand < 0.4) size = 'sm';
+      else size = 'md';
+    }
     
     const newMessage: MessageType = {
       id: uuidv4(),
@@ -435,30 +459,56 @@ const Index = () => {
     return () => clearInterval(messageInterval);
   }, [messages, canvasHeight]);
 
+  // 添加一个函数来更新窗口尺寸状态
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    // 监听窗口大小变化
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    // 组件卸载时移除监听
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen cosmic-bg overflow-hidden relative">
-      {/* 简化的星空效果 */}
-      <StarField starCount={200} speed={0.3} />
-      
-      <GeometricShapes quantity={15} />
-      
-      <div className="container mx-auto px-4 py-6 relative z-10">
-        <div className="flex flex-col h-[calc(100vh-80px)]">
-          <div className="flex justify-center items-center relative py-4">
-            {/* 居中显示标题 */}
-            <h1 className="text-xl sm:text-2xl font-bold glow-text absolute left-1/2 transform -translate-x-1/2">⚡️追⚡️波⚡️</h1>
+    <div className="bg-black text-white min-h-screen">
+      <ResponsiveContainer className="cosmic-universe">
+        <div className="relative flex flex-col min-h-screen">
+          {/* 背景星空 */}
+          <StarField />
+          <GeometricShapes />
+          
+          {/* 头部导航 */}
+          <div className="flex justify-between items-center p-4 relative z-20">
+            {/* 添加空白div保持左右平衡 */}
+            <div className="w-20"></div>
             
-            {/* 将按钮放在右侧 */}
-            <div className="flex gap-2 absolute right-0">
-              <Button 
-                variant="ghost" 
+            {/* 居中显示标题 */}
+            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500 absolute left-1/2 transform -translate-x-1/2">
+              ⚡️ 追波 ⚡️
+            </h1>
+            
+            <div className="flex space-x-2">
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={() => navigate('/profile')}
+                className="rounded-full"
               >
                 <UserCircle className="text-white/80 hover:text-white" />
               </Button>
-              <Button 
-                variant="ghost" 
+              
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={handleClearAllMessages}
               >
@@ -499,28 +549,29 @@ const Index = () => {
               />
             ))}
             
-            {/* 渲染所有消息光球 */}
-            {messages.map(message => (
-              <div
-                key={message.id}
-                style={{
-                  position: 'absolute',
-                  left: `${message.position.x}px`,
-                  top: `${message.position.y}px`,
-                  transform: 'translate(-50%, -50%)',
-                  zIndex: 10
-                }}
-              >
-                <EnergyOrb
-                  id={message.id}
-                  size={message.size}
-                  color={message.color}
-                  senderName={message.senderName}
-                  onClick={() => handleCaptureMessage(message)}
-                  isFloating={true}
-                />
-              </div>
-            ))}
+            {/* 光球列表 - 增加z-index确保在电光路径之上 */}
+            <div className="relative flex-1 w-full">
+              {messages.map(message => (
+                <div 
+                  key={message.id}
+                  className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                  style={{ 
+                    left: `${(message.position.x / windowDimensions.width) * 100}%`,
+                    top: `${(message.position.y / windowDimensions.height) * 100}%`,
+                    zIndex: 10  // 确保光球层级高于电光路径
+                  }}
+                >
+                  <EnergyOrb
+                    size={message.size}
+                    color={message.color}
+                    content={message.text?.substring(0, 1)}
+                    senderName={message.senderName?.substring(0, 1)}
+                    onClick={() => handleCaptureMessage(message)}
+                    isFloating={true}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* 底部操作按钮 */}
@@ -560,7 +611,7 @@ const Index = () => {
             onSuccess={handleSubscriptionSuccess}
           />
         </div>
-      </div>
+      </ResponsiveContainer>
     </div>
   );
 };

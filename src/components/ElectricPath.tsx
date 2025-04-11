@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Position } from '@/types';
 
 interface ElectricPathProps {
@@ -24,8 +24,26 @@ const ElectricPath: React.FC<ElectricPathProps> = ({
   variance = 0.25,
   flashEffect = false
 }) => {
+  const svgRef = useRef<SVGSVGElement>(null);
   const [opacity, setOpacity] = useState(1);
   const [pathD, setPathD] = useState('');
+  const [dimensions, setDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
+  
+  // 处理窗口大小变化
+  useEffect(() => {
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // 根据颜色返回对应的CSS颜色值
   const getColorValue = (color: string) => {
@@ -36,40 +54,51 @@ const ElectricPath: React.FC<ElectricPathProps> = ({
       'pink': 'rgba(244, 114, 182, VAR)',
       'orange': 'rgba(251, 146, 60, VAR)',
       'green': 'rgba(52, 211, 153, VAR)',
+      'peach': 'rgba(251, 113, 133, VAR)',
+      'mint': 'rgba(4, 206, 206, VAR)',
     };
     return colorMap[color] || 'rgba(56, 189, 248, VAR)';
   };
   
-  // 生成锯齿状闪电路径
+  // 根据当前视口尺寸调整路径
   useEffect(() => {
     const generateLightningPath = () => {
-      const dx = endPosition.x - startPosition.x;
-      const dy = endPosition.y - startPosition.y;
+      // 使用相对百分比位置计算实际坐标
+      const start = {
+        x: (startPosition.x / dimensions.width) * window.innerWidth,
+        y: (startPosition.y / dimensions.height) * window.innerHeight
+      };
+      
+      const end = {
+        x: (endPosition.x / dimensions.width) * window.innerWidth,
+        y: (endPosition.y / dimensions.height) * window.innerHeight
+      };
+      
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      // 创建路径点
+      // 路径点计算代码保持不变
       const points = [];
-      points.push({ x: startPosition.x, y: startPosition.y });
+      points.push({ x: start.x, y: start.y });
       
-      // 创建中间点 - 更多的分段和更大的变化
       for (let i = 1; i < segments; i++) {
         const ratio = i / segments;
-        const x = startPosition.x + dx * ratio;
-        const y = startPosition.y + dy * ratio;
+        const x = start.x + dx * ratio;
+        const y = start.y + dy * ratio;
         
-        // 添加随机偏移 - 更大的偏移量创造更锯齿的效果
+        // 添加随机偏移
         const offset = Math.random() * distance * variance;
         const angle = Math.random() * Math.PI * 2;
-        
         points.push({
           x: x + Math.cos(angle) * offset,
           y: y + Math.sin(angle) * offset
         });
       }
       
-      points.push({ x: endPosition.x, y: endPosition.y });
+      points.push({ x: end.x, y: end.y });
       
-      // 构建SVG路径
+      // 创建SVG路径
       let d = `M ${points[0].x} ${points[0].y}`;
       for (let i = 1; i < points.length; i++) {
         d += ` L ${points[i].x} ${points[i].y}`;
@@ -80,15 +109,14 @@ const ElectricPath: React.FC<ElectricPathProps> = ({
     
     generateLightningPath();
     
-    // 如果启用了闪烁效果，添加随机闪烁
     if (flashEffect) {
       const flashInterval = setInterval(() => {
-        setOpacity(Math.random() * 0.5 + 0.5); // 随机闪烁效果
+        setOpacity(Math.random() * 0.5 + 0.5);
       }, 100);
       
       return () => clearInterval(flashInterval);
     }
-  }, [startPosition, endPosition, segments, variance, flashEffect]);
+  }, [startPosition, endPosition, segments, variance, flashEffect, dimensions]);
   
   // 动画结束时删除路径
   useEffect(() => {
@@ -107,8 +135,12 @@ const ElectricPath: React.FC<ElectricPathProps> = ({
   
   return (
     <svg 
-      className="absolute top-0 left-0 w-full h-full z-10 pointer-events-none"
-      style={{ transition: `opacity ${animate ? 100 : 0}ms ease-out` }}
+      ref={svgRef}
+      className="absolute top-0 left-0 w-full h-full pointer-events-none electric-path-svg"
+      style={{ 
+        transition: `opacity ${animate ? 100 : 0}ms ease-out`,
+        zIndex: 5  // 降低z-index，默认是10
+      }}
     >
       <defs>
         <filter id={`glow-${color}`}>
